@@ -1,0 +1,683 @@
+meta:
+  description: NACHA record layouts for achlens v1 (positions are 1-indexed, inclusive).
+  status: Derived from public Nacha ACH developer guide and bank implementation guides; VERIFY each layout against https://achdevguide.nacha.org
+    before release.
+  types:
+    N: numeric, right-justified, zero-filled
+    AN: alphanumeric, left-justified, space-filled
+    A: alphabetic, uppercase
+records:
+  file_header:
+  - name: record_type_code
+    start: 1
+    end: 1
+    length: 1
+    type: N
+    required: true
+    note: Constant "1"
+  - name: priority_code
+    start: 2
+    end: 3
+    length: 2
+    type: N
+    required: true
+    note: '"01"'
+  - name: immediate_destination
+    start: 4
+    end: 13
+    length: 10
+    type: AN
+    required: true
+    note: Blank + 9-digit routing number of receiving point (bank-specific; some use 10 digits)
+  - name: immediate_origin
+    start: 14
+    end: 23
+    length: 10
+    type: AN
+    required: true
+    note: Blank + 9 digits or 10-digit company ID (bank-specific)
+  - name: file_creation_date
+    start: 24
+    end: 29
+    length: 6
+    type: N
+    required: true
+    note: YYMMDD
+  - name: file_creation_time
+    start: 30
+    end: 33
+    length: 4
+    type: N
+    required: false
+    note: HHMM
+  - name: file_id_modifier
+    start: 34
+    end: 34
+    length: 1
+    type: AN
+    required: true
+    note: A-Z or 0-9, uppercase
+  - name: record_size
+    start: 35
+    end: 37
+    length: 3
+    type: N
+    required: true
+    note: '"094"'
+  - name: blocking_factor
+    start: 38
+    end: 39
+    length: 2
+    type: N
+    required: true
+    note: '"10"'
+  - name: format_code
+    start: 40
+    end: 40
+    length: 1
+    type: N
+    required: true
+    note: '"1"'
+  - name: immediate_destination_name
+    start: 41
+    end: 63
+    length: 23
+    type: AN
+    required: false
+  - name: immediate_origin_name
+    start: 64
+    end: 86
+    length: 23
+    type: AN
+    required: false
+  - name: reference_code
+    start: 87
+    end: 94
+    length: 8
+    type: AN
+    required: false
+  batch_header:
+  - name: record_type_code
+    start: 1
+    end: 1
+    length: 1
+    type: N
+    required: true
+    note: Constant "5"
+  - name: service_class_code
+    start: 2
+    end: 4
+    length: 3
+    type: N
+    required: true
+    note: 200 mixed, 220 credits only, 225 debits only
+  - name: company_name
+    start: 5
+    end: 20
+    length: 16
+    type: AN
+    required: true
+  - name: company_discretionary_data
+    start: 21
+    end: 40
+    length: 20
+    type: AN
+    required: false
+  - name: company_identification
+    start: 41
+    end: 50
+    length: 10
+    type: AN
+    required: true
+  - name: standard_entry_class_code
+    start: 51
+    end: 53
+    length: 3
+    type: A
+    required: true
+    note: PPD, CCD, WEB in v1
+  - name: company_entry_description
+    start: 54
+    end: 63
+    length: 10
+    type: AN
+    required: true
+    note: e.g. PAYROLL
+  - name: company_descriptive_date
+    start: 64
+    end: 69
+    length: 6
+    type: AN
+    required: false
+  - name: effective_entry_date
+    start: 70
+    end: 75
+    length: 6
+    type: N
+    required: true
+    note: YYMMDD
+  - name: settlement_date
+    start: 76
+    end: 78
+    length: 3
+    type: N
+    required: false
+    note: Julian; blank in origination files (inserted by ACH Operator)
+  - name: originator_status_code
+    start: 79
+    end: 79
+    length: 1
+    type: AN
+    required: true
+    note: '"1" for most originations'
+  - name: originating_dfi_identification
+    start: 80
+    end: 87
+    length: 8
+    type: N
+    required: true
+    note: First 8 digits of ODFI routing number
+  - name: batch_number
+    start: 88
+    end: 94
+    length: 7
+    type: N
+    required: true
+    note: Ascending within file
+  entry_detail_ppd:
+  - name: record_type_code
+    start: 1
+    end: 1
+    length: 1
+    type: N
+    required: true
+    note: Constant "6"
+  - name: transaction_code
+    start: 2
+    end: 3
+    length: 2
+    type: N
+    required: true
+    note: See transaction code table
+  - name: receiving_dfi_identification
+    start: 4
+    end: 11
+    length: 8
+    type: N
+    required: true
+    note: First 8 digits of RDFI routing
+  - name: check_digit
+    start: 12
+    end: 12
+    length: 1
+    type: N
+    required: true
+    note: 9th digit of RDFI routing
+  - name: dfi_account_number
+    start: 13
+    end: 29
+    length: 17
+    type: AN
+    required: true
+    note: Left-justified, space-filled. SENSITIVE
+  - name: amount
+    start: 30
+    end: 39
+    length: 10
+    type: N
+    required: true
+    note: Cents, zero-filled
+  - name: individual_identification_number
+    start: 40
+    end: 54
+    length: 15
+    type: AN
+    required: false
+    note: SENSITIVE (mask by default)
+  - name: individual_name
+    start: 55
+    end: 76
+    length: 22
+    type: AN
+    required: true
+  - name: discretionary_data
+    start: 77
+    end: 78
+    length: 2
+    type: AN
+    required: false
+  - name: addenda_record_indicator
+    start: 79
+    end: 79
+    length: 1
+    type: N
+    required: true
+    note: 0 or 1
+  - name: trace_number
+    start: 80
+    end: 94
+    length: 15
+    type: N
+    required: true
+    note: ODFI 8 digits + 7-digit sequence; ascending within batch
+  entry_detail_ccd:
+  - name: record_type_code
+    start: 1
+    end: 1
+    length: 1
+    type: N
+    required: true
+    note: Constant "6"
+  - name: transaction_code
+    start: 2
+    end: 3
+    length: 2
+    type: N
+    required: true
+  - name: receiving_dfi_identification
+    start: 4
+    end: 11
+    length: 8
+    type: N
+    required: true
+  - name: check_digit
+    start: 12
+    end: 12
+    length: 1
+    type: N
+    required: true
+  - name: dfi_account_number
+    start: 13
+    end: 29
+    length: 17
+    type: AN
+    required: true
+    note: SENSITIVE
+  - name: amount
+    start: 30
+    end: 39
+    length: 10
+    type: N
+    required: true
+  - name: identification_number
+    start: 40
+    end: 54
+    length: 15
+    type: AN
+    required: false
+  - name: receiving_company_name
+    start: 55
+    end: 76
+    length: 22
+    type: AN
+    required: true
+  - name: discretionary_data
+    start: 77
+    end: 78
+    length: 2
+    type: AN
+    required: false
+  - name: addenda_record_indicator
+    start: 79
+    end: 79
+    length: 1
+    type: N
+    required: true
+  - name: trace_number
+    start: 80
+    end: 94
+    length: 15
+    type: N
+    required: true
+  entry_detail_web:
+  - name: record_type_code
+    start: 1
+    end: 1
+    length: 1
+    type: N
+    required: true
+    note: Constant "6"
+  - name: transaction_code
+    start: 2
+    end: 3
+    length: 2
+    type: N
+    required: true
+  - name: receiving_dfi_identification
+    start: 4
+    end: 11
+    length: 8
+    type: N
+    required: true
+  - name: check_digit
+    start: 12
+    end: 12
+    length: 1
+    type: N
+    required: true
+  - name: dfi_account_number
+    start: 13
+    end: 29
+    length: 17
+    type: AN
+    required: true
+    note: SENSITIVE
+  - name: amount
+    start: 30
+    end: 39
+    length: 10
+    type: N
+    required: true
+  - name: individual_identification_number
+    start: 40
+    end: 54
+    length: 15
+    type: AN
+    required: false
+    note: SENSITIVE
+  - name: individual_name
+    start: 55
+    end: 76
+    length: 22
+    type: AN
+    required: true
+  - name: payment_type_code
+    start: 77
+    end: 78
+    length: 2
+    type: AN
+    required: false
+    note: 'Allowed values: VERIFY against Nacha dev guide'
+  - name: addenda_record_indicator
+    start: 79
+    end: 79
+    length: 1
+    type: N
+    required: true
+  - name: trace_number
+    start: 80
+    end: 94
+    length: 15
+    type: N
+    required: true
+  addenda_05:
+  - name: record_type_code
+    start: 1
+    end: 1
+    length: 1
+    type: N
+    required: true
+    note: Constant "7"
+  - name: addenda_type_code
+    start: 2
+    end: 3
+    length: 2
+    type: N
+    required: true
+    note: '"05"'
+  - name: payment_related_information
+    start: 4
+    end: 83
+    length: 80
+    type: AN
+    required: false
+  - name: addenda_sequence_number
+    start: 84
+    end: 87
+    length: 4
+    type: N
+    required: true
+    note: '"0001" for PPD/CCD/WEB'
+  - name: entry_detail_sequence_number
+    start: 88
+    end: 94
+    length: 7
+    type: N
+    required: true
+    note: Last 7 digits of parent entry trace number
+  addenda_98_noc:
+  - name: record_type_code
+    start: 1
+    end: 1
+    length: 1
+    type: N
+    required: true
+    note: Constant "7"
+  - name: addenda_type_code
+    start: 2
+    end: 3
+    length: 2
+    type: N
+    required: true
+    note: '"98"'
+  - name: change_code
+    start: 4
+    end: 6
+    length: 3
+    type: AN
+    required: true
+    note: C01 etc.
+  - name: original_entry_trace_number
+    start: 7
+    end: 21
+    length: 15
+    type: N
+    required: true
+  - name: reserved_1
+    start: 22
+    end: 27
+    length: 6
+    type: AN
+    required: false
+    note: Blank
+  - name: original_receiving_dfi_identification
+    start: 28
+    end: 35
+    length: 8
+    type: N
+    required: true
+  - name: corrected_data
+    start: 36
+    end: 64
+    length: 29
+    type: AN
+    required: true
+    note: SENSITIVE when it contains an account number
+  - name: reserved_2
+    start: 65
+    end: 79
+    length: 15
+    type: AN
+    required: false
+    note: Blank
+  - name: trace_number
+    start: 80
+    end: 94
+    length: 15
+    type: N
+    required: true
+  addenda_99_return:
+  - name: record_type_code
+    start: 1
+    end: 1
+    length: 1
+    type: N
+    required: true
+    note: Constant "7"
+  - name: addenda_type_code
+    start: 2
+    end: 3
+    length: 2
+    type: N
+    required: true
+    note: '"99"'
+  - name: return_reason_code
+    start: 4
+    end: 6
+    length: 3
+    type: AN
+    required: true
+    note: R01 etc.
+  - name: original_entry_trace_number
+    start: 7
+    end: 21
+    length: 15
+    type: N
+    required: true
+  - name: date_of_death
+    start: 22
+    end: 27
+    length: 6
+    type: N
+    required: false
+    note: YYMMDD, R14/R15 only
+  - name: original_receiving_dfi_identification
+    start: 28
+    end: 35
+    length: 8
+    type: N
+    required: true
+  - name: addenda_information
+    start: 36
+    end: 79
+    length: 44
+    type: AN
+    required: false
+  - name: trace_number
+    start: 80
+    end: 94
+    length: 15
+    type: N
+    required: true
+  batch_control:
+  - name: record_type_code
+    start: 1
+    end: 1
+    length: 1
+    type: N
+    required: true
+    note: Constant "8"
+  - name: service_class_code
+    start: 2
+    end: 4
+    length: 3
+    type: N
+    required: true
+    note: Must match batch header
+  - name: entry_addenda_count
+    start: 5
+    end: 10
+    length: 6
+    type: N
+    required: true
+    note: Count of 6 and 7 records in batch
+  - name: entry_hash
+    start: 11
+    end: 20
+    length: 10
+    type: N
+    required: true
+    note: Sum of RDFI 8-digit IDs, rightmost 10 digits
+  - name: total_debit_entry_dollar_amount
+    start: 21
+    end: 32
+    length: 12
+    type: N
+    required: true
+    note: Cents
+  - name: total_credit_entry_dollar_amount
+    start: 33
+    end: 44
+    length: 12
+    type: N
+    required: true
+    note: Cents
+  - name: company_identification
+    start: 45
+    end: 54
+    length: 10
+    type: AN
+    required: true
+    note: Must match batch header
+  - name: message_authentication_code
+    start: 55
+    end: 73
+    length: 19
+    type: AN
+    required: false
+    note: Blank
+  - name: reserved
+    start: 74
+    end: 79
+    length: 6
+    type: AN
+    required: false
+    note: Blank
+  - name: originating_dfi_identification
+    start: 80
+    end: 87
+    length: 8
+    type: N
+    required: true
+    note: Must match batch header
+  - name: batch_number
+    start: 88
+    end: 94
+    length: 7
+    type: N
+    required: true
+    note: Must match batch header
+  file_control:
+  - name: record_type_code
+    start: 1
+    end: 1
+    length: 1
+    type: N
+    required: true
+    note: Constant "9"
+  - name: batch_count
+    start: 2
+    end: 7
+    length: 6
+    type: N
+    required: true
+  - name: block_count
+    start: 8
+    end: 13
+    length: 6
+    type: N
+    required: true
+    note: Total lines (incl. padding) / 10
+  - name: entry_addenda_count
+    start: 14
+    end: 21
+    length: 8
+    type: N
+    required: true
+    note: Sum of batch counts
+  - name: entry_hash
+    start: 22
+    end: 31
+    length: 10
+    type: N
+    required: true
+    note: Sum of batch hashes, rightmost 10 digits
+  - name: total_debit_entry_dollar_amount
+    start: 32
+    end: 43
+    length: 12
+    type: N
+    required: true
+  - name: total_credit_entry_dollar_amount
+    start: 44
+    end: 55
+    length: 12
+    type: N
+    required: true
+  - name: reserved
+    start: 56
+    end: 94
+    length: 39
+    type: AN
+    required: false
+    note: 39 blanks
