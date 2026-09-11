@@ -3,6 +3,8 @@
 from .builder import build_record
 from .layouts import FieldSpec, RecordLayout, default_layouts, load_layouts
 from .lines import LineEnding, LineRecord, RecordLength, SplitLines, split_lines
+from .model import AchFile, Batch, Entry, FieldValue, Record
+from .parser import parse, parse_ach
 
 __all__ = [
 	"FieldSpec",
@@ -15,4 +17,11 @@ __all__ = [
 	"build_record",
 	"load_layouts",
 	"split_lines",
+	"AchFile",
+	"Batch",
+	"Entry",
+	"FieldValue",
+	"Record",
+	"parse",
+	"parse_ach",
 ]
