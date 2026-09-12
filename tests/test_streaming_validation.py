@@ -85,6 +85,28 @@ def test_streaming_matches_mutated_and_malformed_fixtures(monkeypatch) -> None:
         )
 
 
+def test_streaming_ppd_offsets_preserve_fallback_parity(monkeypatch) -> None:
+    valid = valid_file()
+    ppd_mutations = (
+        set_field(valid, 3, "entry_detail_ppd", "transaction_code", 27),
+        set_field(valid, 3, "entry_detail_ppd", "dfi_account_number", " MUTATED"),
+        set_field(valid, 3, "entry_detail_ppd", "addenda_record_indicator", 1),
+    )
+    fallback_secs = ("CCD", "CTX", "TEL", "WEB")
+    fallback_records = tuple(
+        set_field(valid, 2, "batch_header", "standard_entry_class_code", sec)
+        for sec in fallback_secs
+    )
+    lines = valid.splitlines()
+    short = "\n".join([lines[0][:-1], *lines[1:]])
+    overlong = "\n".join(lines[:2] + [lines[2] + "X"] + lines[3:])
+
+    for content in (*ppd_mutations, *fallback_records, short, overlong):
+        assert _validate(content, monkeypatch, True) == _validate(
+            content, monkeypatch, False
+        )
+
+
 def test_custom_runner_falls_back_even_when_streaming_is_enabled(monkeypatch) -> None:
     finding = Finding("CUSTOM", "warning", "custom")
 

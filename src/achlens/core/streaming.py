@@ -61,6 +61,10 @@ def _slice(content: str, start: int, end: int) -> str:
     return content[start - 1 : end]
 
 
+def _field_offsets(layout) -> dict[str, tuple[int, int]]:
+    return {field.name: (field.start, field.end) for field in layout.fields}
+
+
 def validate_addenda_streaming(split: SplitLines) -> list[Finding]:
     """Evaluate AD rules from addenda slices and compact parent-entry state."""
     if not any(line.content[:1] == "7" for line in split.records):
@@ -580,6 +584,10 @@ def validate_entries_streaming(split: SplitLines) -> list[Finding]:
         "CCD": layouts["entry_detail_ccd"],
         "WEB": layouts["entry_detail_web"],
     }
+    ppd_offsets = _field_offsets(entry_layouts["PPD"])
+    generic_offsets = {
+        sec: _field_offsets(layout) for sec, layout in entry_layouts.items()
+    }
     for index, line in enumerate(split.records):
         code = line.content[:1]
         if code == "5":
@@ -595,11 +603,14 @@ def validate_entries_streaming(split: SplitLines) -> list[Finding]:
         elif code == "6":
             if pending_entry is not None:
                 finish_entry(pending_entry, pending_addenda)
-            layout = entry_layouts.get(sec, layouts["entry_detail_ppd"])
+            if sec == "PPD" and line.length.value == "exact":
+                offsets = ppd_offsets
+            else:
+                offsets = generic_offsets.get(sec, generic_offsets["PPD"])
             pending_entry = (
                 line,
                 line.content,
-                {f.name: (f.start, f.end) for f in layout.fields},
+                offsets,
             )
             pending_addenda = 0
         elif code == "7" and pending_entry is not None:
