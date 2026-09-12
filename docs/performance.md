@@ -80,3 +80,21 @@ The `<2s` target is therefore still a release-readiness blocker unless the
 product owner explicitly accepts a revised target with supporting evidence.
 The current snapshot adapter is not an acceptable workaround because it
 reconstructs rule-facing objects and is slower than the full-parser path.
+
+## Repeated Streaming Comparison
+
+Measured on 2026-09-12 on Windows with Python 3.12 using the repeated
+100,000-entry workload:
+
+```text
+legacy_runs=5.947,5.424,5.724,5.572,6.807
+streaming_runs=6.057,5.842,6.046,5.867,6.397
+legacy_median=5.724
+streaming_median=6.046
+parity=True
+records=100030
+```
+
+The combined opt-in streaming path is not yet a performance improvement: its
+median validation time was 0.322 seconds slower than the legacy path. It
+remains opt-in while further optimization and validation work continues.
