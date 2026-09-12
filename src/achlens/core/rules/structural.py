@@ -19,6 +19,9 @@ class Finding:
     line_number: int | None = None
     record_type: str | None = None
     position: int | None = None
+    field: str | None = None
+    expected: str | None = None
+    actual: str | None = None
 
 
 @dataclass(frozen=True)
@@ -41,6 +44,9 @@ Rule = Callable[[ValidationContext], Iterable[Finding]]
 def _finding(rule_id: str, context: ValidationContext, message: str, *,
              line: LineRecord | Record | None = None,
              position: int | None = None,
+             field: str | None = None,
+             expected: str | None = None,
+             actual: str | None = None,
              registry: RuleRegistry | None = None,
              severity: str | None = None) -> Finding:
     spec = (registry or structural_rule_registry).specs[rule_id]
@@ -52,6 +58,9 @@ def _finding(rule_id: str, context: ValidationContext, message: str, *,
         line_number=getattr(line, "line_number", None),
         record_type=getattr(line, "record_type", None),
         position=position,
+        field=field,
+        expected=expected,
+        actual=actual,
     )
 
 

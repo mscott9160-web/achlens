@@ -11,6 +11,7 @@ from .structural import Finding, ValidationContext, structural_rule_registry, va
 from .headers import header_rule_registry, validate_headers
 from .entry import entry_rule_registry, validate_entries
 from .addenda import addenda_rule_registry, validate_addenda
+from .controls import control_rule_registry, validate_controls
 
 __all__ = [
     "RuleFunction",
@@ -28,4 +29,6 @@ __all__ = [
     "validate_entries",
     "addenda_rule_registry",
     "validate_addenda",
+    "control_rule_registry",
+    "validate_controls",
 ]
