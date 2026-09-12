@@ -3,6 +3,7 @@
 from mcp.server import MCPServer
 
 from .config import ServerConfig
+from .tools import validate_ach_file
 
 
 _config = ServerConfig.from_environment()
@@ -15,9 +16,12 @@ def server_status() -> dict[str, str]:
     return {"name": "achlens", "status": "ready", "transport": "stdio"}
 
 
+mcp.tool()(validate_ach_file)
+
+
 def run() -> None:
     """Run achlens over the SDK's default stdio transport."""
     mcp.run()
 
 
-__all__ = ["mcp", "run", "server_status"]
+__all__ = ["mcp", "run", "server_status", "validate_ach_file"]

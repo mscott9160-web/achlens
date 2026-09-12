@@ -29,6 +29,7 @@ jobs:
       - name: Tests
         run: uv run pytest -q --cov=src/achlens --cov-fail-under=0
       - name: Docs regeneration (Sprint 0 placeholder)
-        run: python -c "print('Docs regeneration placeholder: no generator exists in Sprint 0')"
+        run: |
+          python -c "print('Docs regeneration placeholder: no generator exists in Sprint 0')"
       - name: Dependency audit
         run: uv run pip-audit
