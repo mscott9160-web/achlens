@@ -100,6 +100,8 @@ def s001(context: ValidationContext) -> Iterable[Finding]:
 
 def s002(context: ValidationContext) -> Iterable[Finding]:
     for line in _records(context):
+        if line.content.isascii() and line.content.isprintable():
+            continue
         for offset, character in enumerate(line.content, start=1):
             if not 0x20 <= ord(character) <= 0x7E:
                 yield _finding(

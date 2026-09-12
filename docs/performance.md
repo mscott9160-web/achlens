@@ -28,8 +28,8 @@ Python 3.12 environment:
 ```text
 entries_requested=100000
 records=100030
-generation_seconds=10.494
-validation_seconds=24.435
+generation_seconds=11.803
+validation_seconds=23.645
 peak_megabytes=330.7
 valid=True
 error_count=0
