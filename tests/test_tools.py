@@ -1,5 +1,9 @@
 """MCP-03/MCP-04 tool adapter tests."""
 
+from pathlib import Path
+
+import pytest
+
 from achlens.core import build_record
 from achlens.core.layouts import default_layouts
 from achlens.server.tools import (
@@ -8,6 +12,7 @@ from achlens.server.tools import (
     generate_test_ach_file,
     lookup_ach_code,
     parse_ach_file,
+    repair_control_records_tool,
     summarize_ach_file,
     validate_ach_file,
 )
@@ -136,6 +141,46 @@ def test_generate_test_file_returns_seeded_synthetic_content() -> None:
 def test_generate_test_file_returns_structured_limit_error() -> None:
     result = generate_test_ach_file(entries_per_batch=10_001)
     assert result["error"]["code"] == "UNSUPPORTED"
+
+
+def test_repair_tool_content_mode_returns_repaired_content() -> None:
+    broken = generate_test_ach_file(
+        entries_per_batch=2,
+        seed=8,
+        effective_date="260911",
+        inject_errors=["BC002"],
+    )["content"]
+    result = repair_control_records_tool(content=broken)
+    assert result["path_mode"] is False
+    assert result["valid"] is True
+    assert result["repaired_content"]
+    assert result["changes"]
+
+
+def test_repair_tool_requires_exactly_one_input() -> None:
+    result = repair_control_records_tool()
+    assert result["error"]["code"] == "INPUT_MISSING"
+
+
+def test_repair_tool_path_mode_writes_without_returning_content(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    broken = generate_test_ach_file(
+        entries_per_batch=2,
+        seed=8,
+        effective_date="260911",
+        inject_errors=["BC002"],
+    )["content"]
+    source = tmp_path / "sample.ach"
+    source.write_text(broken, encoding="utf-8")
+    monkeypatch.setenv("ACHLENS_ALLOWED_ROOTS", str(tmp_path))
+    result = repair_control_records_tool(path=str(source))
+    assert result["path_mode"] is True
+    assert "repaired_content" not in result
+    output = Path(result["path"])
+    assert output.exists()
+    second = repair_control_records_tool(path=str(source))
+    assert second["error"]["code"] == "OUTPUT_EXISTS"
 
 
 def test_generate_test_file_propagates_error_injections() -> None:

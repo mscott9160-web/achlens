@@ -11,6 +11,7 @@ from .tools import (
     generate_test_ach_file,
     lookup_ach_code,
     parse_ach_file,
+    repair_control_records_tool,
     summarize_ach_file,
     validate_ach_file,
 )
@@ -32,6 +33,7 @@ mcp.tool()(explain_control_totals)
 mcp.tool()(check_routing_number)
 mcp.tool()(lookup_ach_code)
 mcp.tool()(generate_test_ach_file)
+mcp.tool()(repair_control_records_tool)
 mcp.resource(
     "ach://layouts",
     name="layouts",

@@ -20,6 +20,7 @@ from achlens.core.masking import mask as mask_ach
 from achlens.core.model import AchFile, Record
 from achlens.core.parser import parse
 from achlens.core.reference import lookup_code
+from achlens.core.repair import repair_control_records
 from achlens.core.validator import validate as validate_core
 
 from .config import ServerConfig
@@ -503,10 +504,70 @@ def generate_test_ach_file(
         )
 
 
+def repair_control_records_tool(
+    content: str | None = None,
+    path: str | None = None,
+    restore_trailing_spaces: bool = True,
+) -> dict[str, object]:
+    """Repair derived controls, returning content only in content mode."""
+    try:
+        config = ServerConfig.from_environment()
+        resolved = resolve_input(content=content, path=path, config=config)
+        result = repair_control_records(
+            resolved.content,
+            restore_trailing_spaces=restore_trailing_spaces,
+        )
+        if result.refused:
+            return _error(
+                "REPAIR_UNSAFE",
+                result.refusal_reason or "Repair was refused as unsafe.",
+                "Fix record ordering before attempting control repair.",
+            )
+        changes = [asdict(change) for change in result.changes]
+        if resolved.path is None:
+            return {
+                "repaired_content": result.repaired_content,
+                "changes": changes,
+                "valid": result.valid,
+                "path_mode": False,
+            }
+        output = resolved.path.with_name(
+            f"{resolved.path.stem}.repaired{resolved.path.suffix}"
+        )
+        if output.exists():
+            return _error(
+                "OUTPUT_EXISTS",
+                "The repaired output already exists.",
+                "Remove or rename the existing output before retrying.",
+            )
+        output.write_text(result.repaired_content or "", encoding="utf-8")
+        return {
+            "path": str(output),
+            "changes": changes,
+            "valid": result.valid,
+            "path_mode": True,
+        }
+    except InputResolutionError as error:
+        return _error_from_exception(error)
+    except OSError:
+        return _error(
+            "INTERNAL",
+            "The repaired output could not be written.",
+            "Check permissions and retry.",
+        )
+    except Exception:
+        return _error(
+            "INTERNAL",
+            "The repair request could not be completed.",
+            "Retry without exposing file contents.",
+        )
+
+
 __all__ = [
     "check_routing_number",
     "explain_control_totals",
     "generate_test_ach_file",
+    "repair_control_records_tool",
     "lookup_ach_code",
     "parse_ach_file",
     "summarize_ach_file",
