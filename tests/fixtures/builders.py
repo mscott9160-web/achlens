@@ -3,8 +3,6 @@
 All records in this module are produced from the packaged layout definitions.
 """
 
-from collections.abc import Mapping
-
 from achlens.core import build_record
 from achlens.core.layouts import FieldSpec, default_layouts
 
@@ -152,7 +150,9 @@ def add_padding(content: str, count: int) -> str:
     return _join(_lines(content) + ["9" * 94] * count, content)
 
 
-def inject_non_ascii(content: str, line_number: int = 1, character: str = "\x80") -> str:
+def inject_non_ascii(
+    content: str, line_number: int = 1, character: str = "\x80"
+) -> str:
     if len(character) != 1 or ord(character) <= 0x7E:
         raise ValueError("character must be one non-ASCII character")
     lines = _lines(content)

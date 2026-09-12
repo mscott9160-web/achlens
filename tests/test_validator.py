@@ -1,7 +1,7 @@
 """Focused CORE-14 validator orchestration tests."""
 
-from achlens.core.validator import validate
 from achlens.core.rules.structural import Finding, ValidationContext
+from achlens.core.validator import validate
 
 
 def _runner(*findings: Finding):
@@ -18,7 +18,13 @@ def _finding(rule_id: str, severity: str) -> Finding:
 def test_validator_aggregates_all_severities_and_summary() -> None:
     report = validate(
         "",
-        runners=(_runner(_finding("S014", "error"), _finding("S013", "warning"), _finding("X", "info")),),
+        runners=(
+            _runner(
+                _finding("S014", "error"),
+                _finding("S013", "warning"),
+                _finding("X", "info"),
+            ),
+        ),
     )
 
     assert not report.valid
@@ -33,7 +39,11 @@ def test_min_severity_filters_findings_but_not_complete_counts() -> None:
     report = validate(
         "",
         min_severity="warning",
-        runners=(_runner(_finding("E", "error"), _finding("W", "warning"), _finding("I", "info")),),
+        runners=(
+            _runner(
+                _finding("E", "error"), _finding("W", "warning"), _finding("I", "info")
+            ),
+        ),
     )
 
     assert report.counts == {"error": 1, "warning": 1, "info": 1}

@@ -4,7 +4,6 @@ from pathlib import Path
 
 from .builders import valid_file
 
-
 GOLDEN = Path(__file__).parent / "golden"
 
 

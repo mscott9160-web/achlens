@@ -1,6 +1,6 @@
 """Pure calculations over parsed ACH records."""
 
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable
 
 from .model import AchFile, Batch, Entry, FieldValue, Record
 
@@ -24,14 +24,21 @@ def integer_field(record: Record | None, name: str) -> int | None:
 def text_field(record: Record | None, name: str) -> str | None:
     """Return a parsed text field, or None when it is absent or blank/invalid."""
     value = _field(record, name)
-    return value.value if value is not None and isinstance(value.value, str) and value.value else None
+    return (
+        value.value
+        if value is not None and isinstance(value.value, str) and value.value
+        else None
+    )
 
 
 def aba_check_digit(first_eight: str) -> int:
     """Calculate the ABA check digit for exactly the first eight routing digits."""
     if len(first_eight) != 8 or not first_eight.isdigit():
         raise ValueError("routing prefix must contain exactly 8 digits")
-    remainder = sum(int(digit) * weight for digit, weight in zip(first_eight, _ABA_WEIGHTS)) % 10
+    remainder = (
+        sum(int(digit) * weight for digit, weight in zip(first_eight, _ABA_WEIGHTS))
+        % 10
+    )
     return (10 - remainder) % 10
 
 
@@ -39,7 +46,11 @@ def valid_routing_number(routing_number: str) -> bool:
     """Return whether an eight-digit prefix or nine-digit ABA number is valid."""
     if len(routing_number) == 8 and routing_number.isdigit():
         return True
-    return len(routing_number) == 9 and routing_number.isdigit() and int(routing_number[-1]) == aba_check_digit(routing_number[:8])
+    return (
+        len(routing_number) == 9
+        and routing_number.isdigit()
+        and int(routing_number[-1]) == aba_check_digit(routing_number[:8])
+    )
 
 
 def _detail_hash(details: Iterable[Record]) -> int:
@@ -47,7 +58,9 @@ def _detail_hash(details: Iterable[Record]) -> int:
     for detail in details:
         value = integer_field(detail, "receiving_dfi_identification")
         if value is None:
-            raise ValueError("receiving_dfi_identification must be numeric for a hashed detail")
+            raise ValueError(
+                "receiving_dfi_identification must be numeric for a hashed detail"
+            )
         total += value
     return total
 

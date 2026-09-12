@@ -12,7 +12,9 @@ def _format_field(field_type: str, value: Any, length: int, field_name: str) -> 
         else:
             text = str(value)
             if not text.isdigit():
-                raise ValueError(f"numeric field {field_name!r} must contain only digits")
+                raise ValueError(
+                    f"numeric field {field_name!r} must contain only digits"
+                )
         if len(text) > length:
             raise ValueError(
                 f"value for field {field_name!r} exceeds field length {length}"

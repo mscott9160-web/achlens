@@ -7,32 +7,65 @@ from achlens.core.rules.structural import ValidationContext
 
 def _record(layout: str, line: int, values: dict[str, str]) -> Record:
     fields = {}
-    starts = {"transaction_code": 2, "receiving_dfi_identification": 4,
-              "check_digit": 12, "dfi_account_number": 13, "amount": 30,
-              "individual_name": 55, "receiving_company_name": 55,
-              "payment_type_code": 77, "addenda_record_indicator": 79,
-              "trace_number": 80}
+    starts = {
+        "transaction_code": 2,
+        "receiving_dfi_identification": 4,
+        "check_digit": 12,
+        "dfi_account_number": 13,
+        "amount": 30,
+        "individual_name": 55,
+        "receiving_company_name": 55,
+        "payment_type_code": 77,
+        "addenda_record_indicator": 79,
+        "trace_number": 80,
+    }
     for name, value in values.items():
         start = starts.get(name, 1)
         fields[name] = FieldValue(name, start, start + len(value) - 1, value, value)
     return Record(line, "6", layout, "6" + " " * 93, fields)
 
 
-def _context(sec: str = "PPD", entries: list[Record] | None = None,
-             odfi: str = "12345678") -> ValidationContext:
-    header = Record(2, "5", "batch_header", "5" + " " * 93, {
-        "service_class_code": FieldValue("service_class_code", 2, 4, "220", 220),
-        "standard_entry_class_code": FieldValue("standard_entry_class_code", 51, 53, sec, sec),
-        "odfi_identification": FieldValue("odfi_identification", 80, 87, odfi, odfi),
-    })
+def _context(
+    sec: str = "PPD", entries: list[Record] | None = None, odfi: str = "12345678"
+) -> ValidationContext:
+    header = Record(
+        2,
+        "5",
+        "batch_header",
+        "5" + " " * 93,
+        {
+            "service_class_code": FieldValue("service_class_code", 2, 4, "220", 220),
+            "standard_entry_class_code": FieldValue(
+                "standard_entry_class_code", 51, 53, sec, sec
+            ),
+            "odfi_identification": FieldValue(
+                "odfi_identification", 80, 87, odfi, odfi
+            ),
+        },
+    )
     default = _record(
-        {"PPD": "entry_detail_ppd", "CCD": "entry_detail_ccd", "WEB": "entry_detail_web"}[sec],
-        3, {"transaction_code": "22", "receiving_dfi_identification": "12345678",
-            "check_digit": "0", "dfi_account_number": "ACCOUNT",
-            "amount": "0000000001", "individual_name": "PERSON",
-            "receiving_company_name": "COMPANY", "payment_type_code": "S",
-            "addenda_record_indicator": "0", "trace_number": odfi + "0000001"})
-    batch = Batch(header=header, entries=[Entry(record) for record in (entries or [default])])
+        {
+            "PPD": "entry_detail_ppd",
+            "CCD": "entry_detail_ccd",
+            "WEB": "entry_detail_web",
+        }[sec],
+        3,
+        {
+            "transaction_code": "22",
+            "receiving_dfi_identification": "12345678",
+            "check_digit": "0",
+            "dfi_account_number": "ACCOUNT",
+            "amount": "0000000001",
+            "individual_name": "PERSON",
+            "receiving_company_name": "COMPANY",
+            "payment_type_code": "S",
+            "addenda_record_indicator": "0",
+            "trace_number": odfi + "0000001",
+        },
+    )
+    batch = Batch(
+        header=header, entries=[Entry(record) for record in (entries or [default])]
+    )
     return ValidationContext("", None, AchFile(batches=[batch]))  # type: ignore[arg-type]
 
 
@@ -66,7 +99,9 @@ def test_each_ed_rule_has_a_triggering_fixture() -> None:
         "ED015": {"payment_type_code": "X"},
         "ED016": {"transaction_code": "24"},
     }
-    second = _record(record.layout, 4, {name: field.raw for name, field in record.fields.items()})
+    second = _record(
+        record.layout, 4, {name: field.raw for name, field in record.fields.items()}
+    )
     for rule_id, changes in cases.items():
         values = {name: field.raw for name, field in record.fields.items()}
         values.update(changes)
@@ -90,58 +125,136 @@ def test_valid_ppd_ccd_web_entries_and_severity_differences() -> None:
     for sec in ("PPD", "CCD", "WEB"):
         context = _context(sec)
         assert not _ids(context)
-    warning_ids = {finding.rule_id for finding in validate_entries(_context()) if finding.severity == "warning"}
+    warning_ids = {
+        finding.rule_id
+        for finding in validate_entries(_context())
+        if finding.severity == "warning"
+    }
     assert warning_ids == set()
 
 
 def test_rdfi_requires_exactly_eight_numeric_digits() -> None:
     for rdfi in ("1234567", "123456789"):
-        findings = validate_entries(_context(entries=[_record("entry_detail_ppd", 3, {
-            "transaction_code": "22", "receiving_dfi_identification": rdfi,
-            "check_digit": "0", "dfi_account_number": "ACCOUNT",
-            "amount": "0000000001", "individual_name": "PERSON",
-            "addenda_record_indicator": "0", "trace_number": "123456780000001"})]))
+        findings = validate_entries(
+            _context(
+                entries=[
+                    _record(
+                        "entry_detail_ppd",
+                        3,
+                        {
+                            "transaction_code": "22",
+                            "receiving_dfi_identification": rdfi,
+                            "check_digit": "0",
+                            "dfi_account_number": "ACCOUNT",
+                            "amount": "0000000001",
+                            "individual_name": "PERSON",
+                            "addenda_record_indicator": "0",
+                            "trace_number": "123456780000001",
+                        },
+                    )
+                ]
+            )
+        )
         assert {finding.rule_id for finding in findings} == {"ED003"}
 
 
 def test_amount_requires_exactly_ten_numeric_digits() -> None:
     for amount in ("000000001", "00000000001"):
-        findings = validate_entries(_context(entries=[_record("entry_detail_ppd", 3, {
-            "transaction_code": "22", "receiving_dfi_identification": "12345678",
-            "check_digit": "0", "dfi_account_number": "ACCOUNT",
-            "amount": amount, "individual_name": "PERSON",
-            "addenda_record_indicator": "0", "trace_number": "123456780000001"})]))
+        findings = validate_entries(
+            _context(
+                entries=[
+                    _record(
+                        "entry_detail_ppd",
+                        3,
+                        {
+                            "transaction_code": "22",
+                            "receiving_dfi_identification": "12345678",
+                            "check_digit": "0",
+                            "dfi_account_number": "ACCOUNT",
+                            "amount": amount,
+                            "individual_name": "PERSON",
+                            "addenda_record_indicator": "0",
+                            "trace_number": "123456780000001",
+                        },
+                    )
+                ]
+            )
+        )
         assert {finding.rule_id for finding in findings} == {"ED006"}
 
 
 def test_check_digit_reports_missing_and_malformed_values() -> None:
     for check_digit, message in (("", "missing"), ("AB", "one digit")):
-        findings = validate_entries(_context(entries=[_record("entry_detail_ppd", 3, {
-            "transaction_code": "22", "receiving_dfi_identification": "12345678",
-            "check_digit": check_digit, "dfi_account_number": "ACCOUNT",
-            "amount": "0000000001", "individual_name": "PERSON",
-            "addenda_record_indicator": "0", "trace_number": "123456780000001"})]))
+        findings = validate_entries(
+            _context(
+                entries=[
+                    _record(
+                        "entry_detail_ppd",
+                        3,
+                        {
+                            "transaction_code": "22",
+                            "receiving_dfi_identification": "12345678",
+                            "check_digit": check_digit,
+                            "dfi_account_number": "ACCOUNT",
+                            "amount": "0000000001",
+                            "individual_name": "PERSON",
+                            "addenda_record_indicator": "0",
+                            "trace_number": "123456780000001",
+                        },
+                    )
+                ]
+            )
+        )
         finding = next(finding for finding in findings if finding.rule_id == "ED004")
         assert message in finding.message
 
 
 def test_invalid_web_payment_type_is_explicit_warning() -> None:
-    findings = validate_entries(_context("WEB", entries=[_record("entry_detail_web", 3, {
-        "transaction_code": "22", "receiving_dfi_identification": "12345678",
-        "check_digit": "0", "dfi_account_number": "ACCOUNT",
-        "amount": "0000000001", "individual_name": "PERSON",
-        "payment_type_code": "X", "addenda_record_indicator": "0",
-        "trace_number": "123456780000001"})]))
+    findings = validate_entries(
+        _context(
+            "WEB",
+            entries=[
+                _record(
+                    "entry_detail_web",
+                    3,
+                    {
+                        "transaction_code": "22",
+                        "receiving_dfi_identification": "12345678",
+                        "check_digit": "0",
+                        "dfi_account_number": "ACCOUNT",
+                        "amount": "0000000001",
+                        "individual_name": "PERSON",
+                        "payment_type_code": "X",
+                        "addenda_record_indicator": "0",
+                        "trace_number": "123456780000001",
+                    },
+                )
+            ],
+        )
+    )
     finding = next(finding for finding in findings if finding.rule_id == "ED015")
     assert finding.severity == "warning"
 
 
 def test_leading_account_space_and_live_zero_are_warnings() -> None:
-    context = _context(entries=[_record("entry_detail_ppd", 3, {
-        "transaction_code": "22", "receiving_dfi_identification": "12345678",
-        "check_digit": "0", "dfi_account_number": " ACCOUNT",
-        "amount": "0000000000", "individual_name": "PERSON",
-        "addenda_record_indicator": "0", "trace_number": "123456780000001"})])
+    context = _context(
+        entries=[
+            _record(
+                "entry_detail_ppd",
+                3,
+                {
+                    "transaction_code": "22",
+                    "receiving_dfi_identification": "12345678",
+                    "check_digit": "0",
+                    "dfi_account_number": " ACCOUNT",
+                    "amount": "0000000000",
+                    "individual_name": "PERSON",
+                    "addenda_record_indicator": "0",
+                    "trace_number": "123456780000001",
+                },
+            )
+        ]
+    )
     findings = validate_entries(context)
     assert {finding.rule_id for finding in findings} == {"ED005", "ED008"}
     assert all(finding.severity == "warning" for finding in findings)

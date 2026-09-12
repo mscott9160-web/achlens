@@ -29,7 +29,9 @@ def _field_value(field: FieldSpec, content: str) -> FieldValue:
     )
 
 
-def _record(line: LineRecord, record_type: RecordType, layout: RecordLayout | None) -> Record:
+def _record(
+    line: LineRecord, record_type: RecordType, layout: RecordLayout | None
+) -> Record:
     content = line.content
     return Record(
         line_number=line.line_number,
@@ -48,8 +50,12 @@ def _unknown_record(line: LineRecord, record_type: RecordType) -> Record:
     return record
 
 
-def _layout_record(line: LineRecord, layouts: Mapping[str, RecordLayout], name: str,
-                   record_type: RecordType) -> Record:
+def _layout_record(
+    line: LineRecord,
+    layouts: Mapping[str, RecordLayout],
+    name: str,
+    record_type: RecordType,
+) -> Record:
     return _record(line, record_type, layouts.get(name))
 
 
@@ -59,7 +65,9 @@ def parse(text: str, layouts: Mapping[str, RecordLayout] | None = None) -> AchFi
     split = split_lines(text)
     result = AchFile(
         line_count=len(split.records),
-        line_ending=split.line_ending.value.upper() if split.line_ending.value != "mixed" else "mixed",
+        line_ending=split.line_ending.value.upper()
+        if split.line_ending.value != "mixed"
+        else "mixed",
     )
     current_batch: Batch | None = None
     current_entry: Entry | None = None
@@ -77,33 +85,71 @@ def parse(text: str, layouts: Mapping[str, RecordLayout] | None = None) -> AchFi
         if code == "1" and result.header is None:
             record = _layout_record(line, layouts, "file_header", "1")
             result.header = record
-        elif code == "5" and (current_batch is None or current_batch.control is not None):
+        elif code == "5" and (
+            current_batch is None or current_batch.control is not None
+        ):
             record = _layout_record(line, layouts, "batch_header", "5")
             current_batch = Batch(header=record)
             result.batches.append(current_batch)
             current_entry = None
-        elif code == "6" and current_batch is not None and current_batch.control is None:
-            sec = current_batch.header.fields.get("standard_entry_class_code") if current_batch.header else None
+        elif (
+            code == "6" and current_batch is not None and current_batch.control is None
+        ):
+            sec = (
+                current_batch.header.fields.get("standard_entry_class_code")
+                if current_batch.header
+                else None
+            )
             sec_code = sec.value if sec and isinstance(sec.value, str) else None
-            layout_name = {"PPD": "entry_detail_ppd", "CCD": "entry_detail_ccd", "WEB": "entry_detail_web"}.get(sec_code)
-            record = _layout_record(line, layouts, layout_name, "6") if layout_name else _unknown_record(line, "6")
+            layout_name = {
+                "PPD": "entry_detail_ppd",
+                "CCD": "entry_detail_ccd",
+                "WEB": "entry_detail_web",
+            }.get(sec_code)
+            record = (
+                _layout_record(line, layouts, layout_name, "6")
+                if layout_name
+                else _unknown_record(line, "6")
+            )
             current_entry = Entry(record)
             current_batch.entries.append(current_entry)
-        elif code == "7" and current_entry is not None and current_batch is not None and current_batch.control is None:
+        elif (
+            code == "7"
+            and current_entry is not None
+            and current_batch is not None
+            and current_batch.control is None
+        ):
             addenda_code = content[1:3]
-            layout_name = {"05": "addenda_05", "98": "addenda_98_noc", "99": "addenda_99_return"}.get(addenda_code)
-            record = _layout_record(line, layouts, layout_name, "7") if layout_name else _unknown_record(line, "7")
+            layout_name = {
+                "05": "addenda_05",
+                "98": "addenda_98_noc",
+                "99": "addenda_99_return",
+            }.get(addenda_code)
+            record = (
+                _layout_record(line, layouts, layout_name, "7")
+                if layout_name
+                else _unknown_record(line, "7")
+            )
             current_entry.addenda.append(record)
-        elif code == "8" and current_batch is not None and current_batch.control is None:
+        elif (
+            code == "8" and current_batch is not None and current_batch.control is None
+        ):
             record = _layout_record(line, layouts, "batch_control", "8")
             current_batch.control = record
             current_entry = None
-        elif code == "9" and result.control is None and (current_batch is None or current_batch.control is not None) and content != "9" * 94:
+        elif (
+            code == "9"
+            and result.control is None
+            and (current_batch is None or current_batch.control is not None)
+            and content != "9" * 94
+        ):
             record = _layout_record(line, layouts, "file_control", "9")
             result.control = record
             after_file_control = True
         else:
-            record = _unknown_record(line, code if code in {"1", "5", "6", "7", "8", "9"} else "unknown")  # type: ignore[arg-type]
+            record = _unknown_record(
+                line, code if code in {"1", "5", "6", "7", "8", "9"} else "unknown"
+            )  # type: ignore[arg-type]
             result.unparsed.append(record)
     return result
 

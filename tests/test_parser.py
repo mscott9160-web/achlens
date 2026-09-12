@@ -46,7 +46,11 @@ def _entry(layout_name: str, indicator: int = 1) -> str:
         addenda_record_indicator=indicator,
         trace_number=123456789,
     )
-    fields["receiving_company_name" if layout_name == "entry_detail_ccd" else "individual_name"] = "Jane Doe"
+    fields[
+        "receiving_company_name"
+        if layout_name == "entry_detail_ccd"
+        else "individual_name"
+    ] = "Jane Doe"
     return build_record(default_layouts()[layout_name], **fields)
 
 
@@ -90,9 +94,20 @@ def _controls() -> tuple[str, str]:
 
 def test_parser_decodes_fields_selects_sec_layout_and_attaches_addenda() -> None:
     batch_control, file_control = _controls()
-    text = "\n".join(
-        [_file_header(), _batch_header("WEB"), _entry("entry_detail_web"), _addenda(), batch_control, file_control, "9" * 94]
-    ) + "\n"
+    text = (
+        "\n".join(
+            [
+                _file_header(),
+                _batch_header("WEB"),
+                _entry("entry_detail_web"),
+                _addenda(),
+                batch_control,
+                file_control,
+                "9" * 94,
+            ]
+        )
+        + "\n"
+    )
 
     result = parse(text)
 
@@ -112,7 +127,9 @@ def test_parser_decodes_fields_selects_sec_layout_and_attaches_addenda() -> None
 
 
 def test_parser_uses_ccd_receiving_company_name_fixture() -> None:
-    result = parse("\n".join([_file_header(), _batch_header("CCD"), _entry("entry_detail_ccd")]))
+    result = parse(
+        "\n".join([_file_header(), _batch_header("CCD"), _entry("entry_detail_ccd")])
+    )
 
     entry = result.batches[0].entries[0]
     assert entry.detail.layout == "entry_detail_ccd"
@@ -132,7 +149,16 @@ def test_parser_preserves_unknown_sec_without_ppd_fallback() -> None:
 
 def test_parser_only_marks_all_nines_as_padding_after_file_control() -> None:
     batch_control, file_control = _controls()
-    text = "\n".join([_file_header(), _batch_header("WEB"), "9" * 94, batch_control, file_control, "9" * 94])
+    text = "\n".join(
+        [
+            _file_header(),
+            _batch_header("WEB"),
+            "9" * 94,
+            batch_control,
+            file_control,
+            "9" * 94,
+        ]
+    )
 
     result = parse(text)
 
@@ -144,7 +170,16 @@ def test_parser_only_marks_all_nines_as_padding_after_file_control() -> None:
 
 def test_parser_attaches_unknown_addenda_without_parsing_fields() -> None:
     unknown_addenda = "712" + "X" * 91
-    result = parse("\n".join([_file_header(), _batch_header("WEB"), _entry("entry_detail_web"), unknown_addenda]))
+    result = parse(
+        "\n".join(
+            [
+                _file_header(),
+                _batch_header("WEB"),
+                _entry("entry_detail_web"),
+                unknown_addenda,
+            ]
+        )
+    )
 
     addenda = result.batches[0].entries[0].addenda[0]
     assert addenda.layout == "unknown"

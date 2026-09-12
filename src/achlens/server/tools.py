@@ -3,10 +3,12 @@
 from dataclasses import asdict
 from typing import Literal
 
-from achlens.core.validator import validate as validate_core
 from achlens.core.calculators import file_totals
-from achlens.core.parser import parse
 from achlens.core.data.entry_codes import PRENOTE_CODES
+from achlens.core.masking import mask as mask_ach
+from achlens.core.model import AchFile, Record
+from achlens.core.parser import parse
+from achlens.core.validator import validate as validate_core
 
 from .config import ServerConfig
 from .inputs import InputResolutionError, resolve_input
@@ -50,9 +52,17 @@ def validate_ach_file(
     except InputResolutionError as error:
         return _error_from_exception(error)
     except (UnicodeError, ValueError):
-        return _error("NOT_ACH", "The input could not be validated as an ACH file.", "Provide ACH text with recognizable record types.")
+        return _error(
+            "NOT_ACH",
+            "The input could not be validated as an ACH file.",
+            "Provide ACH text with recognizable record types.",
+        )
     except Exception:
-        return _error("INTERNAL", "The validation request could not be completed.", "Retry the request without exposing file contents.")
+        return _error(
+            "INTERNAL",
+            "The validation request could not be completed.",
+            "Retry the request without exposing file contents.",
+        )
 
 
 def _field(record: object, name: str) -> str:
@@ -102,16 +112,19 @@ def summarize_ach_file(
                 company_names.append(company)
             batch_debit, batch_credit = 0, 0
             from achlens.core.calculators import batch_totals
+
             batch_debit, batch_credit = batch_totals(batch)
-            batches.append({
-                "batch_number": _field(batch.header, "batch_number"),
-                "service_class_code": _field(batch.header, "service_class_code"),
-                "sec_code": sec,
-                "entry_count": len(batch.entries),
-                "addenda_count": sum(len(entry.addenda) for entry in batch.entries),
-                "debit_total_cents": batch_debit,
-                "credit_total_cents": batch_credit,
-            })
+            batches.append(
+                {
+                    "batch_number": _field(batch.header, "batch_number"),
+                    "service_class_code": _field(batch.header, "service_class_code"),
+                    "sec_code": sec,
+                    "entry_count": len(batch.entries),
+                    "addenda_count": sum(len(entry.addenda) for entry in batch.entries),
+                    "debit_total_cents": batch_debit,
+                    "credit_total_cents": batch_credit,
+                }
+            )
             for entry in batch.entries:
                 code = _field(entry.detail, "transaction_code")
                 if code.isdigit() and int(code) in PRENOTE_CODES:
@@ -120,26 +133,36 @@ def summarize_ach_file(
                 for addenda in entry.addenda:
                     addenda_type = _field(addenda, "addenda_type_code")
                     if addenda_type == "99":
-                        returns.append({
-                            "trace_number": trace,
-                            "return_code": _field(addenda, "return_reason_code"),
-                            "title": "Unverified return code",
-                            "original_trace": _field(addenda, "original_entry_trace_number"),
-                        })
+                        returns.append(
+                            {
+                                "trace_number": trace,
+                                "return_code": _field(addenda, "return_reason_code"),
+                                "title": "Unverified return code",
+                                "original_trace": _field(
+                                    addenda, "original_entry_trace_number"
+                                ),
+                            }
+                        )
                     elif addenda_type == "98":
                         corrected = _field(addenda, "corrected_data")
-                        nocs.append({
-                            "trace_number": trace,
-                            "change_code": _field(addenda, "change_code"),
-                            "title": "Unverified NOC code",
-                            "corrected_data_masked": _mask_text(corrected),
-                        })
+                        nocs.append(
+                            {
+                                "trace_number": trace,
+                                "change_code": _field(addenda, "change_code"),
+                                "title": "Unverified NOC code",
+                                "corrected_data_masked": _mask_text(corrected),
+                            }
+                        )
         return {
             "summary": {
                 "line_count": ach_file.line_count,
                 "batch_count": len(ach_file.batches),
                 "entry_count": sum(len(batch.entries) for batch in ach_file.batches),
-                "addenda_count": sum(len(entry.addenda) for batch in ach_file.batches for entry in batch.entries),
+                "addenda_count": sum(
+                    len(entry.addenda)
+                    for batch in ach_file.batches
+                    for entry in batch.entries
+                ),
                 "total_debit_cents": debit,
                 "total_credit_cents": credit,
                 "total_debits": _dollars(debit),
@@ -160,9 +183,89 @@ def summarize_ach_file(
     except InputResolutionError as error:
         return _error_from_exception(error)
     except (UnicodeError, ValueError):
-        return _error("NOT_ACH", "The input could not be summarized as an ACH file.", "Provide ACH text with recognizable record types.")
+        return _error(
+            "NOT_ACH",
+            "The input could not be summarized as an ACH file.",
+            "Provide ACH text with recognizable record types.",
+        )
     except Exception:
-        return _error("INTERNAL", "The summary request could not be completed.", "Retry the request without exposing file contents.")
+        return _error(
+            "INTERNAL",
+            "The summary request could not be completed.",
+            "Retry the request without exposing file contents.",
+        )
 
 
-__all__ = ["summarize_ach_file", "validate_ach_file"]
+def _records(ach_file: AchFile) -> list[Record]:
+    records: list[Record] = []
+    if ach_file.header is not None:
+        records.append(ach_file.header)
+    for batch in ach_file.batches:
+        if batch.header is not None:
+            records.append(batch.header)
+        for entry in batch.entries:
+            records.append(entry.detail)
+            records.extend(entry.addenda)
+        if batch.control is not None:
+            records.append(batch.control)
+    if ach_file.control is not None:
+        records.append(ach_file.control)
+    records.extend(ach_file.padding)
+    records.extend(ach_file.unparsed)
+    return records
+
+
+def parse_ach_file(
+    content: str | None = None,
+    path: str | None = None,
+    reveal_sensitive: bool = False,
+    offset: int = 0,
+    limit: int = 50,
+    record_types: list[str] | None = None,
+) -> dict[str, object]:
+    """Parse named ACH fields in a bounded page of records."""
+    try:
+        if offset < 0 or limit < 1 or limit > 500:
+            return _error(
+                "UNSUPPORTED",
+                "Invalid paging values.",
+                "Use offset >= 0 and limit from 1 through 500.",
+            )
+        config = ServerConfig.from_environment()
+        resolved = resolve_input(content=content, path=path, config=config)
+        parsed = parse(resolved.content)
+        selected = _records(parsed)
+        if record_types is not None:
+            allowed = set(record_types)
+            selected = [record for record in selected if record.record_type in allowed]
+        reveal = reveal_sensitive and config.allow_reveal
+        output = mask_ach(parsed, reveal=reveal)
+        masked_by_line = {record.line_number: record for record in _records(output)}
+        page = [masked_by_line[record.line_number] for record in selected][
+            offset : offset + limit
+        ]
+        next_offset = offset + limit if offset + limit < len(selected) else None
+        return {
+            "records": [asdict(record) for record in page],
+            "total_records": len(selected),
+            "next_offset": next_offset,
+            "masked": not reveal,
+            "path_mode": resolved.path is not None,
+        }
+    except InputResolutionError as error:
+        return _error_from_exception(error)
+    except (UnicodeError, ValueError):
+        return _error(
+            "NOT_ACH",
+            "The input could not be parsed as an ACH file.",
+            "Provide ACH text with recognizable record types.",
+        )
+    except Exception:
+        return _error(
+            "INTERNAL",
+            "The parse request could not be completed.",
+            "Retry the request without exposing file contents.",
+        )
+
+
+__all__ = ["parse_ach_file", "summarize_ach_file", "validate_ach_file"]

@@ -53,8 +53,10 @@ def _field(raw: object, record_name: str, index: int) -> FieldSpec:
     )
     if not isinstance(field.name, str) or not isinstance(field.type, str):
         raise ValueError(f"{context} name and type must be strings")
-    if not all(isinstance(value, int) and not isinstance(value, bool) for value in
-               (field.start, field.end, field.length)):
+    if not all(
+        isinstance(value, int) and not isinstance(value, bool)
+        for value in (field.start, field.end, field.length)
+    ):
         raise ValueError(f"{context} positions and length must be integers")
     if not isinstance(field.required, bool):
         raise ValueError(f"{context} required must be a boolean")
@@ -66,11 +68,17 @@ def validate_layout_contiguity(layout: RecordLayout) -> None:
     expected = 1
     for field in sorted(layout.fields, key=lambda item: item.start):
         if field.length <= 0:
-            raise ValueError(f"layout {layout.name!r} field {field.name!r} has invalid length")
+            raise ValueError(
+                f"layout {layout.name!r} field {field.name!r} has invalid length"
+            )
         if field.end - field.start + 1 != field.length:
-            raise ValueError(f"layout {layout.name!r} field {field.name!r} has inconsistent length")
+            raise ValueError(
+                f"layout {layout.name!r} field {field.name!r} has inconsistent length"
+            )
         if field.start < 1 or field.end > 94:
-            raise ValueError(f"layout {layout.name!r} field {field.name!r} is out of range")
+            raise ValueError(
+                f"layout {layout.name!r} field {field.name!r} is out of range"
+            )
         if field.start != expected:
             if field.start < expected:
                 detail = "overlap"
@@ -91,10 +99,14 @@ def _parse_layouts(raw: object) -> dict[str, RecordLayout]:
     records = cast(Mapping[str, Any], raw["records"])
     for name, fields in records.items():
         if not isinstance(name, str) or not isinstance(fields, list):
-            raise ValueError("each record layout must have a string name and field list")
+            raise ValueError(
+                "each record layout must have a string name and field list"
+            )
         layout = RecordLayout(
             name=name,
-            fields=tuple(_field(field, name, index) for index, field in enumerate(fields)),
+            fields=tuple(
+                _field(field, name, index) for index, field in enumerate(fields)
+            ),
         )
         validate_layout_contiguity(layout)
         layouts[name] = layout
@@ -103,7 +115,11 @@ def _parse_layouts(raw: object) -> dict[str, RecordLayout]:
 
 def load_layouts(path: str | Path | None = None) -> dict[str, RecordLayout]:
     """Load and validate layouts from *path*, or from the packaged YAML by default."""
-    source = Path(path) if path is not None else Path(files("achlens.core.data").joinpath("ach_layouts.yaml"))
+    source = (
+        Path(path)
+        if path is not None
+        else Path(files("achlens.core.data").joinpath("ach_layouts.yaml"))
+    )
     with source.open(encoding="utf-8") as stream:
         return _parse_layouts(yaml.safe_load(stream))
 

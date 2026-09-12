@@ -69,7 +69,13 @@ def test_file_header_rules_and_severities() -> None:
     for rule_id, header in cases.items():
         finding = next(f for f in _findings(header) if f.rule_id == rule_id)
         assert finding.position is not None
-        assert finding.severity == ("warning" if rule_id == "FH001" or rule_id == "FH002" else "error" if rule_id not in {"FH004"} else "info")
+        assert finding.severity == (
+            "warning"
+            if rule_id == "FH001" or rule_id == "FH002"
+            else "error"
+            if rule_id not in {"FH004"}
+            else "info"
+        )
 
 
 def test_batch_header_rules_and_severities() -> None:
@@ -86,39 +92,61 @@ def test_batch_header_rules_and_severities() -> None:
         "BH010": _replace(_batch(), 80, 87, "1234ABCD"),
     }
     for rule_id, batch in cases.items():
-        finding = next(f for f in _findings("\n".join([_header(), batch])) if f.rule_id == rule_id)
+        finding = next(
+            f for f in _findings("\n".join([_header(), batch])) if f.rule_id == rule_id
+        )
         assert finding.position is not None
         expected = "warning" if rule_id in {"BH007", "BH008", "BH009"} else "error"
         assert finding.severity == expected
 
 
 def test_service_class_280_is_a_warning() -> None:
-    findings = [f for f in _findings("\n".join([_header(), _batch(service_class_code=280)])) if f.rule_id == "BH001"]
+    findings = [
+        f
+        for f in _findings("\n".join([_header(), _batch(service_class_code=280)]))
+        if f.rule_id == "BH001"
+    ]
     assert len(findings) == 1
     assert findings[0].severity == "warning"
 
 
 def test_batch_numbers_must_ascend() -> None:
     batch_control = "8" + " " * 93
-    findings = _findings("\n".join([_header(), _batch(2), batch_control, _batch(2), batch_control, _batch(1)]))
+    findings = _findings(
+        "\n".join(
+            [_header(), _batch(2), batch_control, _batch(2), batch_control, _batch(1)]
+        )
+    )
     assert sum(f.rule_id == "BH011" for f in findings) == 2
 
 
 def test_unknown_sec_is_error_and_missing_sec_is_error() -> None:
-    unknown = next(f for f in _findings("\n".join([_header(), _batch(standard_entry_class_code="ZZZ")])) if f.rule_id == "BH004")
+    unknown = next(
+        f
+        for f in _findings(
+            "\n".join([_header(), _batch(standard_entry_class_code="ZZZ")])
+        )
+        if f.rule_id == "BH004"
+    )
     missing = _replace(_batch(), 51, 53, "   ")
-    missing_finding = next(f for f in _findings("\n".join([_header(), missing])) if f.rule_id == "BH004")
+    missing_finding = next(
+        f for f in _findings("\n".join([_header(), missing])) if f.rule_id == "BH004"
+    )
     assert unknown.severity == "error"
     assert missing_finding.severity == "error"
 
 
 def test_recognized_standard_sec_outside_v1_is_warning() -> None:
-    findings = _findings("\n".join([_header(), _batch(standard_entry_class_code="CTX")]))
+    findings = _findings(
+        "\n".join([_header(), _batch(standard_entry_class_code="CTX")])
+    )
     bh004 = next(f for f in findings if f.rule_id == "BH004")
     assert bh004.severity == "warning"
 
 
 def test_unknown_nonempty_sec_is_error() -> None:
-    findings = _findings("\n".join([_header(), _batch(standard_entry_class_code="ZZZ")]))
+    findings = _findings(
+        "\n".join([_header(), _batch(standard_entry_class_code="ZZZ")])
+    )
     bh004 = next(f for f in findings if f.rule_id == "BH004")
     assert bh004.severity == "error"

@@ -14,6 +14,7 @@ def test_server_registers_expected_tool_without_protocol_output() -> None:
         "server_status",
         "validate_ach_file",
         "summarize_ach_file",
+        "parse_ach_file",
     ]
     assert tools[0].description == "Return the local achlens server status."
 
@@ -21,7 +22,9 @@ def test_server_registers_expected_tool_without_protocol_output() -> None:
 def test_server_status_tool_returns_structured_result() -> None:
     result = asyncio.run(server.call_tool("server_status", {}))
     assert result.structured_content == {
-        "name": "achlens", "status": "ready", "transport": "stdio"
+        "name": "achlens",
+        "status": "ready",
+        "transport": "stdio",
     }
 
 

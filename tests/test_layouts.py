@@ -25,7 +25,8 @@ def test_load_layouts_rejects_gap(tmp_path) -> None:
     path.write_text(
         "records:\n  broken:\n"
         "  - {name: first, start: 1, end: 10, length: 10, type: N, required: true}\n"
-        "  - {name: second, start: 12, end: 94, length: 83, type: AN, required: false}\n",
+        "  - {name: second, start: 12, end: 94, length: 83, type: AN, "
+        "required: false}\n",
         encoding="utf-8",
     )
 
@@ -38,7 +39,8 @@ def test_load_layouts_rejects_overlap(tmp_path) -> None:
     path.write_text(
         "records:\n  broken:\n"
         "  - {name: first, start: 1, end: 10, length: 10, type: N, required: true}\n"
-        "  - {name: second, start: 10, end: 94, length: 85, type: AN, required: false}\n",
+        "  - {name: second, start: 10, end: 94, length: 85, type: AN, "
+        "required: false}\n",
         encoding="utf-8",
     )
 

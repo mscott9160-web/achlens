@@ -7,8 +7,8 @@ from achlens.core.calculators import (
     batch_totals,
     block_count,
     entry_addenda_count,
-    file_entry_hash,
     file_entry_addenda_count,
+    file_entry_hash,
     file_totals,
     integer_field,
     text_field,
@@ -17,17 +17,24 @@ from achlens.core.calculators import (
 from achlens.core.model import AchFile, Batch, Entry, FieldValue, Record
 
 
-def detail(code: int | str | None, rdfi: int | str | None, amount: int | str | None) -> Record:
+def detail(
+    code: int | str | None, rdfi: int | str | None, amount: int | str | None
+) -> Record:
     values = {
         "transaction_code": FieldValue("transaction_code", 2, 3, "", code),
-        "receiving_dfi_identification": FieldValue("receiving_dfi_identification", 4, 11, "", rdfi),
+        "receiving_dfi_identification": FieldValue(
+            "receiving_dfi_identification", 4, 11, "", rdfi
+        ),
         "amount": FieldValue("amount", 30, 39, "", amount),
     }
     return Record(1, "6", "test", "", values)
 
 
 def make_batch(*details: Record, addenda: int = 0) -> Batch:
-    entries = [Entry(record, [Record(2, "7", "", "") for _ in range(addenda)]) for record in details]
+    entries = [
+        Entry(record, [Record(2, "7", "", "") for _ in range(addenda)])
+        for record in details
+    ]
     return Batch(entries=entries)
 
 
@@ -40,14 +47,24 @@ def test_routing_check_digit_and_validation() -> None:
 
 
 def test_hashes_truncate_and_match_worked_example() -> None:
-    first = make_batch(detail(22, 23138010, 154321), detail(32, 4400003, 98050), detail(23, 32407119, 0), addenda=1)
+    first = make_batch(
+        detail(22, 23138010, 154321),
+        detail(32, 4400003, 98050),
+        detail(23, 32407119, 0),
+        addenda=1,
+    )
     second = make_batch(detail(27, 4400003, 25000))
     ach_file = AchFile(batches=[first, second])
 
     assert batch_entry_hash(first) == 59945132
     assert batch_entry_hash(second) == 4400003
     assert file_entry_hash(ach_file) == 64345135
-    assert batch_entry_hash(make_batch(detail(22, 9999999999, 0), detail(22, 9999999999, 0))) == 9999999998
+    assert (
+        batch_entry_hash(
+            make_batch(detail(22, 9999999999, 0), detail(22, 9999999999, 0))
+        )
+        == 9999999998
+    )
 
 
 def test_file_hash_uses_recomputed_batch_hashes() -> None:
@@ -73,13 +90,19 @@ def test_counts_include_addenda_and_exclude_other_records() -> None:
     batch.entries[0].addenda.append(Record(2, "7", "", ""))
     assert batch_entry_addenda_count(batch) == 3
     assert file_entry_addenda_count(AchFile(batches=[batch])) == 3
-    assert entry_addenda_count([batch.entries[0].detail, *batch.entries[0].addenda]) == 2
+    assert (
+        entry_addenda_count([batch.entries[0].detail, *batch.entries[0].addenda]) == 2
+    )
 
 
 def test_totals_cover_credit_debit_prenote_and_zero_codes() -> None:
     batch = make_batch(
-        detail(22, 1, 100), detail(23, 2, 999), detail(24, 3, 0),
-        detail(27, 4, 250), detail(28, 5, 999), detail(29, 6, 0),
+        detail(22, 1, 100),
+        detail(23, 2, 999),
+        detail(24, 3, 0),
+        detail(27, 4, 250),
+        detail(28, 5, 999),
+        detail(29, 6, 0),
     )
     assert batch_totals(batch) == (250, 100)
     assert file_totals(AchFile(batches=[batch])) == (250, 100)
@@ -87,7 +110,9 @@ def test_totals_cover_credit_debit_prenote_and_zero_codes() -> None:
 
 @pytest.mark.parametrize("code", [22, 27])
 @pytest.mark.parametrize("amount", [None, "bad"])
-def test_totals_reject_malformed_amount_for_dollar_entries(code: int, amount: object) -> None:
+def test_totals_reject_malformed_amount_for_dollar_entries(
+    code: int, amount: object
+) -> None:
     with pytest.raises(ValueError, match="amount"):
         batch_totals(make_batch(detail(code, 1, amount)))
 

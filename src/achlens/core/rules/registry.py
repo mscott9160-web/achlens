@@ -8,7 +8,6 @@ from typing import Any, cast
 
 import yaml
 
-
 RuleFunction = Callable[[Any], Iterable[Any]]
 _REQUIRED_FIELDS = (
     "id",
@@ -81,7 +80,9 @@ class RuleRegistry:
             if missing:
                 details.append(f"missing implementations: {', '.join(missing)}")
             if extra:
-                details.append(f"implementations absent from catalog: {', '.join(extra)}")
+                details.append(
+                    f"implementations absent from catalog: {', '.join(extra)}"
+                )
             raise ValueError("rule registry parity check failed; " + "; ".join(details))
 
     def decorator(self, rule_id: str) -> Callable[[RuleFunction], RuleFunction]:
@@ -106,10 +107,14 @@ def _parse_spec(row: object, index: int) -> RuleSpec:
     if not all(isinstance(raw[field], str) and raw[field] for field in scalar_fields):
         raise ValueError(f"catalog row {index} has empty or non-string metadata")
     applies_to = raw["applies_to"]
-    if not isinstance(applies_to, list) or not all(isinstance(item, str) for item in applies_to):
+    if not isinstance(applies_to, list) or not all(
+        isinstance(item, str) for item in applies_to
+    ):
         raise ValueError(f"catalog row {index} applies_to must be a list of strings")
     if raw["severity"] not in _VALID_SEVERITIES:
-        raise ValueError(f"catalog row {index} has invalid severity {raw['severity']!r}")
+        raise ValueError(
+            f"catalog row {index} has invalid severity {raw['severity']!r}"
+        )
     if raw["status"] not in _VALID_STATUSES:
         raise ValueError(f"catalog row {index} has invalid status {raw['status']!r}")
     return RuleSpec(**{**raw, "applies_to": tuple(applies_to)})
@@ -117,7 +122,11 @@ def _parse_spec(row: object, index: int) -> RuleSpec:
 
 def load_rule_registry(path: str | Path | None = None) -> RuleRegistry:
     """Load and validate the packaged rule catalog."""
-    source = Path(path) if path is not None else Path(files("achlens.core.data").joinpath("rules.yaml"))
+    source = (
+        Path(path)
+        if path is not None
+        else Path(files("achlens.core.data").joinpath("rules.yaml"))
+    )
     with source.open(encoding="utf-8") as stream:
         raw = yaml.safe_load(stream)
     if not isinstance(raw, list):
@@ -135,4 +144,10 @@ def default_rule_registry() -> RuleRegistry:
     return load_rule_registry()
 
 
-__all__ = ["RuleFunction", "RuleRegistry", "RuleSpec", "default_rule_registry", "load_rule_registry"]
+__all__ = [
+    "RuleFunction",
+    "RuleRegistry",
+    "RuleSpec",
+    "default_rule_registry",
+    "load_rule_registry",
+]

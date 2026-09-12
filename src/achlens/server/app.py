@@ -3,8 +3,7 @@
 from mcp.server import MCPServer
 
 from .config import ServerConfig
-from .tools import summarize_ach_file, validate_ach_file
-
+from .tools import parse_ach_file, summarize_ach_file, validate_ach_file
 
 _config = ServerConfig.from_environment()
 mcp = MCPServer("achlens", version="0.1.0", log_level=_config.log_level)
@@ -18,6 +17,7 @@ def server_status() -> dict[str, str]:
 
 mcp.tool()(validate_ach_file)
 mcp.tool()(summarize_ach_file)
+mcp.tool()(parse_ach_file)
 
 
 def run() -> None:
@@ -25,4 +25,11 @@ def run() -> None:
     mcp.run()
 
 
-__all__ = ["mcp", "run", "server_status", "summarize_ach_file", "validate_ach_file"]
+__all__ = [
+    "mcp",
+    "parse_ach_file",
+    "run",
+    "server_status",
+    "summarize_ach_file",
+    "validate_ach_file",
+]

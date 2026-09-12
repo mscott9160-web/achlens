@@ -4,7 +4,6 @@ from copy import deepcopy
 
 from .model import AchFile, Record
 
-
 _SENSITIVE_FIELDS = frozenset(
     {
         "dfi_account_number",
@@ -60,11 +59,9 @@ def mask(ach_file: AchFile, *, reveal: bool = False) -> AchFile:
             field.value = _masked_value(field.value)
             field.raw = _masked_value(field.raw)
             if 0 <= field.start <= field.end <= len(record.raw):
-                replacement = _masked_value(record.raw[field.start:field.end])
+                replacement = _masked_value(record.raw[field.start : field.end])
                 record.raw = (
-                    record.raw[:field.start]
-                    + replacement
-                    + record.raw[field.end:]
+                    record.raw[: field.start] + replacement + record.raw[field.end :]
                 )
 
     return masked

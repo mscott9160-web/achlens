@@ -1,6 +1,5 @@
 """Secure resolution of content and local file inputs."""
 
-import os
 import stat
 from dataclasses import dataclass
 from pathlib import Path
@@ -39,21 +38,45 @@ def _allowed(path: Path, roots: tuple[Path, ...]) -> bool:
 
 def _resolve_path(path_value: str, config: ServerConfig) -> Path:
     if not config.allowed_roots:
-        raise _fail("PATH_NOT_ALLOWED", "Path input is disabled.", "Use content input or configure ACHLENS_ALLOWED_ROOTS.")
+        raise _fail(
+            "PATH_NOT_ALLOWED",
+            "Path input is disabled.",
+            "Use content input or configure ACHLENS_ALLOWED_ROOTS.",
+        )
     requested = Path(path_value).expanduser()
     resolved = requested.resolve(strict=False)
     if not _allowed(resolved, config.allowed_roots):
-        raise _fail("PATH_NOT_ALLOWED", "Path is outside the configured allowed roots.", "Use a file beneath an allowed root.")
+        raise _fail(
+            "PATH_NOT_ALLOWED",
+            "Path is outside the configured allowed roots.",
+            "Use a file beneath an allowed root.",
+        )
     if not resolved.exists():
-        raise _fail("PATH_NOT_FOUND", "The requested path does not exist.", "Check the path and try again.")
+        raise _fail(
+            "PATH_NOT_FOUND",
+            "The requested path does not exist.",
+            "Check the path and try again.",
+        )
     try:
         metadata = resolved.stat()
     except OSError as error:
-        raise _fail("PATH_NOT_FOUND", "The requested path could not be inspected.", "Check permissions and try again.") from error
+        raise _fail(
+            "PATH_NOT_FOUND",
+            "The requested path could not be inspected.",
+            "Check permissions and try again.",
+        ) from error
     if not stat.S_ISREG(metadata.st_mode):
-        raise _fail("PATH_NOT_ALLOWED", "The requested path is not a regular file.", "Provide a regular ACH file.")
+        raise _fail(
+            "PATH_NOT_ALLOWED",
+            "The requested path is not a regular file.",
+            "Provide a regular ACH file.",
+        )
     if metadata.st_size > config.max_bytes:
-        raise _fail("TOO_LARGE", "The input file exceeds the configured size limit.", "Use a smaller file or raise ACHLENS_MAX_BYTES.")
+        raise _fail(
+            "TOO_LARGE",
+            "The input file exceeds the configured size limit.",
+            "Use a smaller file or raise ACHLENS_MAX_BYTES.",
+        )
     return resolved
 
 
@@ -71,7 +94,11 @@ def resolve_input(
     settings = config or ServerConfig.from_environment()
     if content is not None:
         if len(content.encode("utf-8")) > settings.max_bytes:
-            raise _fail("TOO_LARGE", "The content exceeds the configured size limit.", "Use smaller content or raise ACHLENS_MAX_BYTES.")
+            raise _fail(
+                "TOO_LARGE",
+                "The content exceeds the configured size limit.",
+                "Use smaller content or raise ACHLENS_MAX_BYTES.",
+            )
         return ResolvedInput(content=content)
     assert path is not None
     resolved = _resolve_path(path, settings)
@@ -79,9 +106,17 @@ def resolve_input(
         data = resolved.read_bytes()
         text = data.decode("utf-8")
     except UnicodeDecodeError as error:
-        raise _fail("UNSUPPORTED", "The input file is not valid UTF-8 text.", "Provide text encoded for ACH processing.") from error
+        raise _fail(
+            "UNSUPPORTED",
+            "The input file is not valid UTF-8 text.",
+            "Provide text encoded for ACH processing.",
+        ) from error
     except OSError as error:
-        raise _fail("PATH_NOT_FOUND", "The input file could not be read.", "Check permissions and try again.") from error
+        raise _fail(
+            "PATH_NOT_FOUND",
+            "The input file could not be read.",
+            "Check permissions and try again.",
+        ) from error
     return ResolvedInput(content=text, path=resolved)
 
 

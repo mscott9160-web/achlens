@@ -2,7 +2,7 @@
 
 from achlens.core import build_record
 from achlens.core.layouts import default_layouts
-from achlens.server.tools import summarize_ach_file, validate_ach_file
+from achlens.server.tools import parse_ach_file, summarize_ach_file, validate_ach_file
 from tests.fixtures.builders import valid_file
 
 
@@ -43,3 +43,19 @@ def test_summary_masks_noc_corrected_data() -> None:
     assert result["nocs"][0]["change_code"] == "C01"
     assert result["nocs"][0]["corrected_data_masked"].endswith("6789")
     assert "ACCOUNT-123456789" not in str(result)
+
+
+def test_parse_tool_pages_and_filters_records() -> None:
+    content = valid_file()
+    first_page = parse_ach_file(content=content, offset=0, limit=2)
+    assert first_page["total_records"] == 10
+    assert len(first_page["records"]) == 2
+    assert first_page["next_offset"] == 2
+    entries = parse_ach_file(content=content, record_types=["6"])
+    assert entries["total_records"] == 1
+    assert entries["records"][0]["record_type"] == "6"
+
+
+def test_parse_tool_rejects_invalid_page_size() -> None:
+    result = parse_ach_file(content=valid_file(), limit=501)
+    assert result["error"]["code"] == "UNSUPPORTED"

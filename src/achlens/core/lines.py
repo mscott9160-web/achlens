@@ -39,7 +39,7 @@ class LineRecord:
     @property
     def content(self) -> str:
         """Return the record without its line terminator."""
-        return self.raw[:-len(self.ending)] if self.ending else self.raw
+        return self.raw[: -len(self.ending)] if self.ending else self.raw
 
 
 @dataclass(frozen=True)
@@ -87,7 +87,7 @@ def split_lines(text: str) -> SplitLines:
             endings.append(ending)
             start = newline + 1
 
-        content = raw[:-len(ending)] if ending else raw
+        content = raw[: -len(ending)] if ending else raw
         if len(content) < 94:
             length = RecordLength.SHORT
             potential_trailing_space_loss = True

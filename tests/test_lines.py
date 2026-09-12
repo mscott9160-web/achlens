@@ -52,7 +52,9 @@ def test_overlong_record_is_not_restorable() -> None:
 
 
 @pytest.mark.parametrize("ending", ["\n", "\r\n"])
-def test_short_record_preserves_meaningful_trailing_spaces_and_ending(ending: str) -> None:
+def test_short_record_preserves_meaningful_trailing_spaces_and_ending(
+    ending: str,
+) -> None:
     content = "ABC123" + " " * 4
     record = split_lines(content + ending).records[0]
     assert record.raw == content + ending

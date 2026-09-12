@@ -1,6 +1,6 @@
 """Focused CORE-13 batch and file control rule tests."""
 
-from achlens.core import build_record, parse
+from achlens.core import build_record
 from achlens.core.layouts import default_layouts
 from achlens.core.rules.controls import control_rule_registry, validate_controls
 
@@ -70,7 +70,20 @@ def _file() -> str:
         total_credit_entry_dollar_amount=100,
     )
     padding = "9" * 94
-    return "\n".join([header, batch, entry, batch_control, file_control, padding, padding, padding, padding, padding])
+    return "\n".join(
+        [
+            header,
+            batch,
+            entry,
+            batch_control,
+            file_control,
+            padding,
+            padding,
+            padding,
+            padding,
+            padding,
+        ]
+    )
 
 
 def _replace(record: str, start: int, end: int, value: str) -> str:
@@ -86,7 +99,9 @@ def test_registry_has_all_control_rules() -> None:
         *(f"BC{i:03d}" for i in range(1, 10)),
         *(f"FC{i:03d}" for i in range(1, 8)),
     }
-    assert set(control_rule_registry.implementations) == set(control_rule_registry.specs)
+    assert set(control_rule_registry.implementations) == set(
+        control_rule_registry.specs
+    )
 
 
 def test_balanced_file_has_no_control_findings() -> None:

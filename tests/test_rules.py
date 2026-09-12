@@ -7,7 +7,6 @@ import yaml
 
 from achlens.core.rules.registry import RuleRegistry, RuleSpec, load_rule_registry
 
-
 EXPECTED_IDS = {
     *(f"S{i:03d}" for i in range(1, 15)),
     *(f"FH{i:03d}" for i in range(1, 11)),
@@ -20,7 +19,17 @@ EXPECTED_IDS = {
 
 
 def _spec(rule_id: str = "S001") -> RuleSpec:
-    return RuleSpec(rule_id, "S", "error", "title", "description", "fix", ("all",), "source", "UNVERIFIED")
+    return RuleSpec(
+        rule_id,
+        "S",
+        "error",
+        "title",
+        "description",
+        "fix",
+        ("all",),
+        "source",
+        "UNVERIFIED",
+    )
 
 
 def _stub(_context):

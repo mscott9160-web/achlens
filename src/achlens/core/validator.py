@@ -1,7 +1,7 @@
 """Run all implemented ACH rules and build a bounded validation report."""
 
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from .rules.addenda import validate_addenda
 from .rules.controls import validate_controls
@@ -73,10 +73,14 @@ def validate(
         raise ValueError("min_severity must be error, warning, or info")
     if max_findings < 0:
         raise ValueError("max_findings cannot be negative")
-    context = ValidationContext.from_text(content) if isinstance(content, str) else content
+    context = (
+        ValidationContext.from_text(content) if isinstance(content, str) else content
+    )
     all_findings = [finding for runner in runners for finding in runner(context)]
     if rule_ids is not None:
-        all_findings = [finding for finding in all_findings if finding.rule_id in rule_ids]
+        all_findings = [
+            finding for finding in all_findings if finding.rule_id in rule_ids
+        ]
 
     counts = {severity: 0 for severity in ("error", "warning", "info")}
     counts_by_rule: dict[str, int] = {}
@@ -105,4 +109,10 @@ def validate(
 validate_ach_file = validate
 
 
-__all__ = ["DEFAULT_RULE_RUNNERS", "FileSummary", "ValidationReport", "validate", "validate_ach_file"]
+__all__ = [
+    "DEFAULT_RULE_RUNNERS",
+    "FileSummary",
+    "ValidationReport",
+    "validate",
+    "validate_ach_file",
+]

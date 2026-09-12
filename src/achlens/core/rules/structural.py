@@ -7,7 +7,7 @@ from typing import Callable
 from ..lines import LineRecord, SplitLines, split_lines
 from ..model import AchFile, Record
 from ..parser import parse
-from .registry import RuleRegistry, RuleSpec, default_rule_registry
+from .registry import RuleRegistry, default_rule_registry
 
 
 @dataclass(frozen=True)
@@ -41,14 +41,19 @@ class ValidationContext:
 Rule = Callable[[ValidationContext], Iterable[Finding]]
 
 
-def _finding(rule_id: str, context: ValidationContext, message: str, *,
-             line: LineRecord | Record | None = None,
-             position: int | None = None,
-             field: str | None = None,
-             expected: str | None = None,
-             actual: str | None = None,
-             registry: RuleRegistry | None = None,
-             severity: str | None = None) -> Finding:
+def _finding(
+    rule_id: str,
+    context: ValidationContext,
+    message: str,
+    *,
+    line: LineRecord | Record | None = None,
+    position: int | None = None,
+    field: str | None = None,
+    expected: str | None = None,
+    actual: str | None = None,
+    registry: RuleRegistry | None = None,
+    severity: str | None = None,
+) -> Finding:
     spec = (registry or structural_rule_registry).specs[rule_id]
     return Finding(
         rule_id=rule_id,
@@ -84,21 +89,35 @@ def _control_index(context: ValidationContext) -> int | None:
 def s001(context: ValidationContext) -> Iterable[Finding]:
     for line in _records(context):
         if line.length.value != "exact":
-            yield _finding("S001", context, "Record line is not exactly 94 characters.", line=line, position=95)
+            yield _finding(
+                "S001",
+                context,
+                "Record line is not exactly 94 characters.",
+                line=line,
+                position=95,
+            )
 
 
 def s002(context: ValidationContext) -> Iterable[Finding]:
     for line in _records(context):
         for offset, character in enumerate(line.content, start=1):
             if not 0x20 <= ord(character) <= 0x7E:
-                yield _finding("S002", context, "Record contains non-printable ASCII.", line=line, position=offset)
+                yield _finding(
+                    "S002",
+                    context,
+                    "Record contains non-printable ASCII.",
+                    line=line,
+                    position=offset,
+                )
                 break
 
 
 def s003(context: ValidationContext) -> Iterable[Finding]:
     for line in _records(context):
         if not line.content or line.content[0] not in "156789":
-            yield _finding("S003", context, "Record type is unknown.", line=line, position=1)
+            yield _finding(
+                "S003", context, "Record type is unknown.", line=line, position=1
+            )
 
 
 def s004(context: ValidationContext) -> Iterable[Finding]:
@@ -106,13 +125,17 @@ def s004(context: ValidationContext) -> Iterable[Finding]:
     if not records:
         yield _finding("S004", context, "File must begin with a file header.")
     elif records[0].content[:1] != "1":
-        yield _finding("S004", context, "File must begin with a file header.", line=records[0])
+        yield _finding(
+            "S004", context, "File must begin with a file header.", line=records[0]
+        )
 
 
 def s005(context: ValidationContext) -> Iterable[Finding]:
     headers = [line for line in _records(context) if line.content[:1] == "1"]
     for line in headers[1:]:
-        yield _finding("S005", context, "File contains more than one file header.", line=line)
+        yield _finding(
+            "S005", context, "File contains more than one file header.", line=line
+        )
 
 
 def s006(context: ValidationContext) -> Iterable[Finding]:
@@ -125,13 +148,15 @@ def s006(context: ValidationContext) -> Iterable[Finding]:
         code = line.content[:1]
         if code == "9" and not _is_padding(line):
             control_seen = True
-        allowed = ((not previous and code == "1") or
-                   (previous == "1" and code == "5") or
-                   (previous == "5" and code in {"6", "8"}) or
-                   (previous == "6" and code in {"6", "7", "8"}) or
-                   (previous == "7" and code in {"7", "6", "8"}) or
-                   (previous == "8" and code in {"5", "9"}) or
-                   (previous == "9" and code == "9"))
+        allowed = (
+            (not previous and code == "1")
+            or (previous == "1" and code == "5")
+            or (previous == "5" and code in {"6", "8"})
+            or (previous == "6" and code in {"6", "7", "8"})
+            or (previous == "7" and code in {"7", "6", "8"})
+            or (previous == "8" and code in {"5", "9"})
+            or (previous == "9" and code == "9")
+        )
         if code not in valid or (previous and not allowed):
             yield _finding("S006", context, "Record order is invalid.", line=line)
         if code in valid:
@@ -141,7 +166,12 @@ def s006(context: ValidationContext) -> Iterable[Finding]:
 def s007(context: ValidationContext) -> Iterable[Finding]:
     for batch in context.ach_file.batches:
         if not batch.entries and batch.header:
-            yield _finding("S007", context, "Batch must contain at least one entry detail record.", line=batch.header)
+            yield _finding(
+                "S007",
+                context,
+                "Batch must contain at least one entry detail record.",
+                line=batch.header,
+            )
 
 
 def s008(context: ValidationContext) -> Iterable[Finding]:
@@ -153,18 +183,28 @@ def s009(context: ValidationContext) -> Iterable[Finding]:
     control_index = _control_index(context)
     if control_index is None:
         return
-    for line in _records(context)[control_index + 1:]:
+    for line in _records(context)[control_index + 1 :]:
         if not _is_padding(line):
-            yield _finding("S009", context, "Only padding may follow the file control record.", line=line)
+            yield _finding(
+                "S009",
+                context,
+                "Only padding may follow the file control record.",
+                line=line,
+            )
 
 
 def s010(context: ValidationContext) -> Iterable[Finding]:
     control_index = _control_index(context)
     if control_index is None:
         return
-    for line in _records(context)[control_index + 1:]:
+    for line in _records(context)[control_index + 1 :]:
         if line.content[:1] == "9" and not _is_padding(line):
-            yield _finding("S010", context, "Padding record must contain exactly 94 nines.", line=line)
+            yield _finding(
+                "S010",
+                context,
+                "Padding record must contain exactly 94 nines.",
+                line=line,
+            )
 
 
 def s011(context: ValidationContext) -> Iterable[Finding]:
@@ -176,10 +216,12 @@ def s012(context: ValidationContext) -> Iterable[Finding]:
     control_index = _control_index(context)
     if control_index is None:
         return
-    actual = sum(_is_padding(line) for line in _records(context)[control_index + 1:])
+    actual = sum(_is_padding(line) for line in _records(context)[control_index + 1 :])
     expected = (10 - (control_index + 1) % 10) % 10
     if actual != expected:
-        yield _finding("S012", context, "Padding must fill the next ten-record block exactly.")
+        yield _finding(
+            "S012", context, "Padding must fill the next ten-record block exactly."
+        )
 
 
 def s013(context: ValidationContext) -> Iterable[Finding]:
@@ -192,8 +234,10 @@ def s014(context: ValidationContext) -> Iterable[Finding]:
         yield _finding("S014", context, "ACH file must contain at least one record.")
 
 
-def structural_rule_registry() -> RuleRegistry:
-    specs = [spec for spec in default_rule_registry().specs.values() if spec.category == "S"]
+def _build_structural_rule_registry() -> RuleRegistry:
+    specs = [
+        spec for spec in default_rule_registry().specs.values() if spec.category == "S"
+    ]
     registry = RuleRegistry(specs)
     for rule_id, function in _RULES.items():
         registry.register(rule_id, function)
@@ -201,15 +245,26 @@ def structural_rule_registry() -> RuleRegistry:
     return registry
 
 
-_RULES: dict[str, Rule] = {f"S{index:03d}": globals()[f"s{index:03d}"] for index in range(1, 15)}
-structural_rule_registry = structural_rule_registry()
+_RULES: dict[str, Rule] = {
+    f"S{index:03d}": globals()[f"s{index:03d}"] for index in range(1, 15)
+}
+structural_rule_registry = _build_structural_rule_registry()
 
 
 def validate_structure(context: ValidationContext | str) -> list[Finding]:
     """Run all registered structural rules against text or a context."""
     if isinstance(context, str):
         context = ValidationContext.from_text(context)
-    return [finding for rule in structural_rule_registry.implementations.values() for finding in rule(context)]
+    return [
+        finding
+        for rule in structural_rule_registry.implementations.values()
+        for finding in rule(context)
+    ]
 
 
-__all__ = ["Finding", "ValidationContext", "structural_rule_registry", "validate_structure"]
+__all__ = [
+    "Finding",
+    "ValidationContext",
+    "structural_rule_registry",
+    "validate_structure",
+]
