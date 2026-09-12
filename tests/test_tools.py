@@ -2,7 +2,12 @@
 
 from achlens.core import build_record
 from achlens.core.layouts import default_layouts
-from achlens.server.tools import parse_ach_file, summarize_ach_file, validate_ach_file
+from achlens.server.tools import (
+    explain_control_totals,
+    parse_ach_file,
+    summarize_ach_file,
+    validate_ach_file,
+)
 from tests.fixtures.builders import valid_file
 
 
@@ -59,3 +64,15 @@ def test_parse_tool_pages_and_filters_records() -> None:
 def test_parse_tool_rejects_invalid_page_size() -> None:
     result = parse_ach_file(content=valid_file(), limit=501)
     assert result["error"]["code"] == "UNSUPPORTED"
+
+
+def test_explain_control_totals_reports_recomputed_values() -> None:
+    result = explain_control_totals(content=valid_file())
+    assert result["batches"][0]["comparisons"][1]["field"] == "entry_hash"
+    assert all(item["matches"] for item in result["batches"][0]["comparisons"])
+    assert all(item["matches"] for item in result["file"]["comparisons"])
+
+
+def test_explain_control_totals_can_select_a_batch() -> None:
+    result = explain_control_totals(content=valid_file(), batch_number=2)
+    assert result["batches"] == []

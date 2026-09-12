@@ -3,7 +3,15 @@
 from dataclasses import asdict
 from typing import Literal
 
-from achlens.core.calculators import file_totals
+from achlens.core.calculators import (
+    batch_entry_addenda_count,
+    batch_entry_hash,
+    batch_totals,
+    block_count,
+    file_entry_addenda_count,
+    file_entry_hash,
+    file_totals,
+)
 from achlens.core.data.entry_codes import PRENOTE_CODES
 from achlens.core.masking import mask as mask_ach
 from achlens.core.model import AchFile, Record
@@ -268,4 +276,144 @@ def parse_ach_file(
         )
 
 
-__all__ = ["parse_ach_file", "summarize_ach_file", "validate_ach_file"]
+def _comparison(
+    field: str,
+    stated: str,
+    computed: object,
+    explanation: str,
+) -> dict[str, object]:
+    computed_text = str(computed)
+    stated_value = int(stated) if stated.isdigit() else stated
+    return {
+        "field": field,
+        "stated": stated_value,
+        "computed": computed,
+        "matches": stated_value == computed or stated_value == computed_text,
+        "explanation": explanation,
+    }
+
+
+def explain_control_totals(
+    content: str | None = None,
+    path: str | None = None,
+    batch_number: int | None = None,
+) -> dict[str, object]:
+    """Explain stated versus recomputed batch and file control totals."""
+    try:
+        config = ServerConfig.from_environment()
+        resolved = resolve_input(content=content, path=path, config=config)
+        ach_file = parse(resolved.content)
+        batches: list[dict[str, object]] = []
+        for batch in ach_file.batches:
+            number_text = _field(batch.header, "batch_number")
+            number = int(number_text) if number_text.isdigit() else None
+            if batch_number is not None and number != batch_number:
+                continue
+            debit, credit = batch_totals(batch)
+            expected_hash = batch_entry_hash(batch)
+            addends = [
+                _field(entry.detail, "receiving_dfi_identification")
+                for entry in batch.entries
+            ]
+            batches.append(
+                {
+                    "batch_number": number,
+                    "comparisons": [
+                        _comparison(
+                            "entry_addenda_count",
+                            _field(batch.control, "entry_addenda_count"),
+                            batch_entry_addenda_count(batch),
+                            "Count of entry and addenda records in this batch.",
+                        ),
+                        _comparison(
+                            "entry_hash",
+                            _field(batch.control, "entry_hash"),
+                            expected_hash,
+                            "Sum of receiving DFI identifiers: "
+                            f"{' + '.join(addends[:20])}"
+                            f"{' ...' if len(addends) > 20 else ''}.",
+                        ),
+                        _comparison(
+                            "total_debit_entry_dollar_amount",
+                            _field(batch.control, "total_debit_entry_dollar_amount"),
+                            debit,
+                            "Sum of debit entry amounts in cents.",
+                        ),
+                        _comparison(
+                            "total_credit_entry_dollar_amount",
+                            _field(batch.control, "total_credit_entry_dollar_amount"),
+                            credit,
+                            "Sum of credit entry amounts in cents.",
+                        ),
+                    ],
+                }
+            )
+        file_debit, file_credit = file_totals(ach_file)
+        file_control = ach_file.control
+        comparisons = [
+            _comparison(
+                "batch_count",
+                _field(file_control, "batch_count"),
+                len(ach_file.batches),
+                "Number of parsed batches.",
+            ),
+            _comparison(
+                "block_count",
+                _field(file_control, "block_count"),
+                block_count(ach_file.line_count),
+                "Total physical records divided into ten-record blocks.",
+            ),
+            _comparison(
+                "entry_addenda_count",
+                _field(file_control, "entry_addenda_count"),
+                file_entry_addenda_count(ach_file),
+                "Sum of batch entry/addenda counts.",
+            ),
+            _comparison(
+                "entry_hash",
+                _field(file_control, "entry_hash"),
+                file_entry_hash(ach_file),
+                "Sum of recomputed batch entry hashes, keeping the rightmost "
+                "ten digits.",
+            ),
+            _comparison(
+                "total_debit_entry_dollar_amount",
+                _field(file_control, "total_debit_entry_dollar_amount"),
+                file_debit,
+                "Sum of batch debit totals in cents.",
+            ),
+            _comparison(
+                "total_credit_entry_dollar_amount",
+                _field(file_control, "total_credit_entry_dollar_amount"),
+                file_credit,
+                "Sum of batch credit totals in cents.",
+            ),
+        ]
+        return {
+            "batches": batches,
+            "file": {"comparisons": comparisons},
+            "masked": True,
+            "path_mode": resolved.path is not None,
+        }
+    except InputResolutionError as error:
+        return _error_from_exception(error)
+    except (UnicodeError, ValueError):
+        return _error(
+            "NOT_ACH",
+            "The input could not be analyzed as an ACH file.",
+            "Provide ACH text with recognizable records and control fields.",
+        )
+    except Exception:
+        return _error(
+            "INTERNAL",
+            "The control-total explanation could not be completed.",
+            "Retry the request without exposing file contents.",
+        )
+
+
+__all__ = [
+    "explain_control_totals",
+    "parse_ach_file",
+    "summarize_ach_file",
+    "validate_ach_file",
+]
