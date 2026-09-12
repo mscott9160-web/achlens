@@ -44,6 +44,7 @@ def generate_ach_file(
     service_class: int = 200,
     include_prenotes: bool = False,
     include_addenda: bool = False,
+    addenda_per_entry: int | None = None,
     seed: int | None = None,
     effective_date: str | None = None,
     inject_errors: list[str] | None = None,
@@ -58,6 +59,10 @@ def generate_ach_file(
         raise ValueError("entries_per_batch must be between 1 and 10000")
     if service_class not in {200, 220, 225}:
         raise ValueError("service_class must be 200, 220, or 225")
+    if addenda_per_entry is not None and not 1 <= addenda_per_entry <= 9_999:
+        raise ValueError("addenda_per_entry must be between 1 and 9999")
+    if addenda_per_entry is not None and sec_code != "CTX":
+        raise ValueError("addenda_per_entry is supported only for CTX")
     effective = _effective_date(effective_date)
     rng = random.Random(seed)
     layouts = default_layouts()
@@ -139,7 +144,13 @@ def generate_ach_file(
             else:
                 debit_total += amount
             if include_addenda and sec_code != "TEL":
-                addenda_count = 2 if sec_code == "CTX" else 1
+                addenda_count = (
+                    addenda_per_entry
+                    if addenda_per_entry is not None
+                    else 2
+                    if sec_code == "CTX"
+                    else 1
+                )
                 for sequence in range(1, addenda_count + 1):
                     lines.append(
                         build_record(
