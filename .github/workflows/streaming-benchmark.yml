@@ -1,0 +1,57 @@
+name: Streaming Benchmark
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 3 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    env:
+      ACHLENS_INTERNAL_STREAMING_VALIDATION: "1"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v5
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: latest
+          enable-cache: false
+
+      - name: Set up Python 3.12
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync --python 3.12
+
+      - name: Run optimized streaming benchmark
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p benchmark-results
+          for run_number in 1 2 3; do
+            {
+              echo "run=${run_number}"
+              date -u +"timestamp=%Y-%m-%dT%H:%M:%SZ"
+              uv run python scripts/benchmark_validation.py --entries 100000
+            } 2>&1 | tee "benchmark-results/run-${run_number}.log"
+          done
+
+      - name: Upload benchmark logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: streaming-benchmark-${{ matrix.os }}
+          path: benchmark-results/
+          if-no-files-found: error
