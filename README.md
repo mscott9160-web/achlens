@@ -1,8 +1,36 @@
 # achlens
 
-achlens is a local-first Python project for inspecting and validating synthetic
-ACH files. Sprint 0 contains the repository foundation only; ACH parsing,
-validation, MCP tools, and reference data are intentionally not implemented.
+achlens is a local-first Python MCP server and CLI for inspecting synthetic ACH
+files. It parses fixed-width records, validates structure and control totals,
+explains findings, masks sensitive fields, repairs derived controls, and
+generates deterministic test files. It never transmits ACH files or makes
+bank/network calls.
+
+Use synthetic data only. This project is not a bank gateway, compliance
+advisor, or transmission system.
+
+## Quick Start
+
+```text
+uv sync
+uv run achlens --help
+uv run achlens validate tests/fixtures/golden/sample_valid.ach
+uv run achlens generate --sec PPD --entries 5 --seed 7 > synthetic.ach
+```
+
+Run the MCP server over stdio:
+
+```text
+uv run achlens serve
+```
+
+The MCP server exposes validation, summaries, parsed-record paging, control
+explanations, routing checks, code lookup, synthetic generation, and control
+repair. See [docs/tools.md](docs/tools.md) for the current tool surface.
+
+Sensitive fields are masked by default. Configure `ACHLENS_ALLOWED_ROOTS` to
+enable MCP path inputs; otherwise provide file content directly. See
+[SECURITY.md](SECURITY.md) for the data and write boundaries.
 
 ## Development
 
@@ -17,5 +45,4 @@ uv run ruff format --check .
 uv run mypy --strict src
 ```
 
-Use synthetic data only. Never add real payment data, account numbers, or ACH
-files to this repository.
+Never add real payment data, account numbers, or ACH files to this repository.
