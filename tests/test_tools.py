@@ -3,6 +3,7 @@
 from achlens.core import build_record
 from achlens.core.layouts import default_layouts
 from achlens.server.tools import (
+    check_routing_number,
     explain_control_totals,
     parse_ach_file,
     summarize_ach_file,
@@ -76,3 +77,22 @@ def test_explain_control_totals_reports_recomputed_values() -> None:
 def test_explain_control_totals_can_select_a_batch() -> None:
     result = explain_control_totals(content=valid_file(), batch_number=2)
     assert result["batches"] == []
+
+
+def test_check_routing_number_reports_check_digit_and_limitation() -> None:
+    valid = check_routing_number("123456780")
+    assert valid["valid"] is True
+    assert valid["expected_check_digit"] == "0"
+    assert "active institution" in valid["explanation"]
+
+    invalid = check_routing_number("123456781")
+    assert invalid["valid"] is False
+    assert invalid["expected_check_digit"] == "0"
+
+
+def test_check_routing_prefix_and_bad_input() -> None:
+    prefix = check_routing_number("12345678")
+    assert prefix["valid"] is True
+    assert prefix["expected_check_digit"] == "0"
+    error = check_routing_number("not-a-routing-number")
+    assert error["error"]["code"] == "UNSUPPORTED"

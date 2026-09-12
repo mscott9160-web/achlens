@@ -4,6 +4,7 @@ from dataclasses import asdict
 from typing import Literal
 
 from achlens.core.calculators import (
+    aba_check_digit,
     batch_entry_addenda_count,
     batch_entry_hash,
     batch_totals,
@@ -11,6 +12,7 @@ from achlens.core.calculators import (
     file_entry_addenda_count,
     file_entry_hash,
     file_totals,
+    valid_routing_number,
 )
 from achlens.core.data.entry_codes import PRENOTE_CODES
 from achlens.core.masking import mask as mask_ach
@@ -411,7 +413,32 @@ def explain_control_totals(
         )
 
 
+def check_routing_number(routing_number: str) -> dict[str, object]:
+    """Check an ABA routing number's mathematical check digit."""
+    if len(routing_number) not in {8, 9} or not routing_number.isdigit():
+        return _error(
+            "UNSUPPORTED",
+            "Routing number must contain exactly 8 or 9 digits.",
+            "Provide an eight-digit prefix or a nine-digit routing number.",
+        )
+    expected = aba_check_digit(routing_number[:8])
+    valid = valid_routing_number(routing_number)
+    return {
+        "input": routing_number,
+        "valid": valid,
+        "expected_check_digit": str(expected),
+        "explanation": (
+            "The ABA check digit is mathematically valid; this does not confirm "
+            "that the routing number belongs to an active institution."
+            if valid
+            else "The supplied check digit does not match the ABA calculation; "
+            "this check does not query active institutions."
+        ),
+    }
+
+
 __all__ = [
+    "check_routing_number",
     "explain_control_totals",
     "parse_ach_file",
     "summarize_ach_file",

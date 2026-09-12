@@ -4,6 +4,7 @@ from mcp.server import MCPServer
 
 from .config import ServerConfig
 from .tools import (
+    check_routing_number,
     explain_control_totals,
     parse_ach_file,
     summarize_ach_file,
@@ -24,6 +25,7 @@ mcp.tool()(validate_ach_file)
 mcp.tool()(summarize_ach_file)
 mcp.tool()(parse_ach_file)
 mcp.tool()(explain_control_totals)
+mcp.tool()(check_routing_number)
 
 
 def run() -> None:
@@ -34,6 +36,7 @@ def run() -> None:
 __all__ = [
     "mcp",
     "explain_control_totals",
+    "check_routing_number",
     "parse_ach_file",
     "run",
     "server_status",
