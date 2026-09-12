@@ -5,6 +5,7 @@ from achlens.core.layouts import default_layouts
 from achlens.server.tools import (
     check_routing_number,
     explain_control_totals,
+    generate_test_ach_file,
     lookup_ach_code,
     parse_ach_file,
     summarize_ach_file,
@@ -115,3 +116,23 @@ def test_lookup_ach_code_returns_close_matches_and_structured_errors() -> None:
     assert unknown["close_matches"]
     error = lookup_ach_code("unsupported", "R03")
     assert error["error"]["code"] == "UNSUPPORTED"
+
+
+def test_generate_test_file_returns_seeded_synthetic_content() -> None:
+    result = generate_test_ach_file(
+        sec_code="WEB",
+        batches=2,
+        entries_per_batch=2,
+        service_class=220,
+        include_prenotes=True,
+        seed=7,
+        effective_date="260911",
+    )
+    assert result["summary"]["synthetic_only"] is True
+    assert result["summary"]["batch_count"] == 2
+    assert len(result["content"].splitlines()) % 10 == 0
+
+
+def test_generate_test_file_returns_structured_limit_error() -> None:
+    result = generate_test_ach_file(entries_per_batch=10_001)
+    assert result["error"]["code"] == "UNSUPPORTED"

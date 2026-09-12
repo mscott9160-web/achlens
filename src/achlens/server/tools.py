@@ -15,6 +15,7 @@ from achlens.core.calculators import (
     valid_routing_number,
 )
 from achlens.core.data.entry_codes import PRENOTE_CODES
+from achlens.core.generator import generate_ach_file
 from achlens.core.masking import mask as mask_ach
 from achlens.core.model import AchFile, Record
 from achlens.core.parser import parse
@@ -450,9 +451,60 @@ def lookup_ach_code(kind: str, code: str) -> dict[str, object]:
         )
 
 
+def generate_test_ach_file(
+    sec_code: Literal["PPD", "CCD", "WEB"] = "PPD",
+    batches: int = 1,
+    entries_per_batch: int = 5,
+    service_class: Literal[200, 220, 225] = 200,
+    include_prenotes: bool = False,
+    include_addenda: bool = False,
+    seed: int | None = None,
+    effective_date: str | None = None,
+) -> dict[str, object]:
+    """Generate a balanced synthetic ACH file for testing, never transmission."""
+    try:
+        content = generate_ach_file(
+            sec_code=sec_code,
+            batches=batches,
+            entries_per_batch=entries_per_batch,
+            service_class=service_class,
+            include_prenotes=include_prenotes,
+            include_addenda=include_addenda,
+            seed=seed,
+            effective_date=effective_date,
+        )
+        parsed = parse(content)
+        debit, credit = file_totals(parsed)
+        return {
+            "content": content,
+            "summary": {
+                "batch_count": len(parsed.batches),
+                "entry_count": sum(len(batch.entries) for batch in parsed.batches),
+                "debit_cents": debit,
+                "credit_cents": credit,
+                "synthetic_only": True,
+            },
+            "injected": [],
+            "seed": seed,
+        }
+    except ValueError as error:
+        return _error(
+            "UNSUPPORTED",
+            str(error),
+            "Use the documented generator limits and supported options.",
+        )
+    except Exception:
+        return _error(
+            "INTERNAL",
+            "The synthetic file could not be generated.",
+            "Retry with smaller limits.",
+        )
+
+
 __all__ = [
     "check_routing_number",
     "explain_control_totals",
+    "generate_test_ach_file",
     "lookup_ach_code",
     "parse_ach_file",
     "summarize_ach_file",

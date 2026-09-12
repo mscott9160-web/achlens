@@ -8,6 +8,7 @@ from .resources import layouts_resource, reference_resource, rules_resource
 from .tools import (
     check_routing_number,
     explain_control_totals,
+    generate_test_ach_file,
     lookup_ach_code,
     parse_ach_file,
     summarize_ach_file,
@@ -30,6 +31,7 @@ mcp.tool()(parse_ach_file)
 mcp.tool()(explain_control_totals)
 mcp.tool()(check_routing_number)
 mcp.tool()(lookup_ach_code)
+mcp.tool()(generate_test_ach_file)
 mcp.resource(
     "ach://layouts",
     name="layouts",
