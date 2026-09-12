@@ -54,3 +54,42 @@ def test_snapshot_aggregates_match_full_parser() -> None:
             left.trace_number == right.detail.fields["trace_number"].raw
             for left, right in zip(snapshot_batch.entries, parsed_batch.entries)
         )
+
+
+def test_snapshot_parity_corpus_covers_supported_mutations() -> None:
+    mutations = (
+        [],
+        ["S001"],
+        ["S011"],
+        ["ED004"],
+        ["ED012"],
+        ["BC002"],
+        ["BC003"],
+        ["BC004"],
+        ["BC005"],
+        ["FC001"],
+        ["FC003"],
+        ["FC004"],
+        ["FC005"],
+        ["FC006"],
+    )
+    for seed in range(5):
+        for inject_errors in mutations:
+            content = generate_ach_file(
+                batches=2,
+                entries_per_batch=3,
+                include_addenda=True,
+                seed=seed,
+                effective_date="260912",
+                inject_errors=list(inject_errors),
+            )
+            snapshot = build_validation_snapshot(content)
+            parsed = parse(content)
+            debit, credit = file_totals(parsed)
+            assert snapshot.file_aggregates.entry_hash == file_entry_hash(parsed)
+            assert snapshot.file_aggregates.total_debit_cents == debit
+            assert snapshot.file_aggregates.total_credit_cents == credit
+            assert snapshot.file_aggregates.entry_addenda_count == sum(
+                len(batch.entries) + sum(len(entry.addenda) for entry in batch.entries)
+                for batch in parsed.batches
+            )
