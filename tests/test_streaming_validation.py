@@ -1,6 +1,6 @@
 """Parity coverage for the internal first streaming-validation slice."""
 
-from achlens.core import build_record, generate_ach_file, validate
+from achlens.core import build_record, generate_ach_file, streaming, validate
 from achlens.core.layouts import default_layouts
 from achlens.core.rules.structural import Finding, ValidationContext
 from tests.fixtures.builders import (
@@ -24,6 +24,40 @@ def test_streaming_flag_is_opt_in_and_default_matches_legacy(monkeypatch) -> Non
     default_report = _validate(content, monkeypatch, False)
     streaming_report = _validate(content, monkeypatch, True)
     assert default_report == streaming_report
+
+
+def test_streaming_check_digit_cache_preserves_valid_and_malformed_behavior(
+    monkeypatch,
+) -> None:
+    content = valid_file()
+    lines = content.splitlines()
+    repeated_entry = lines[2]
+    varied_entry = set_field(
+        content, 3, "entry_detail_ppd", "receiving_dfi_identification", 87654321
+    ).splitlines()[2]
+    malformed_entry = lines[2][:3] + "BAD" + lines[2][6:]
+    split = streaming.split_lines(
+        "\n".join(
+            lines[:2]
+            + [repeated_entry, repeated_entry, varied_entry, malformed_entry]
+            + lines[3:]
+        )
+    )
+    calls: list[str] = []
+    original = streaming.aba_check_digit
+
+    def counted(prefix: str) -> int:
+        calls.append(prefix)
+        return original(prefix)
+
+    monkeypatch.setattr(streaming, "aba_check_digit", counted)
+    findings = streaming.validate_entries_streaming(split)
+
+    assert calls == ["12345678", "87654321"]
+    assert any(finding.rule_id == "ED003" for finding in findings)
+    assert not any(
+        finding.rule_id == "ED004" and finding.line_number == 3 for finding in findings
+    )
 
 
 def test_streaming_matches_header_mutations(monkeypatch) -> None:

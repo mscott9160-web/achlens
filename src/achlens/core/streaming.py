@@ -458,6 +458,7 @@ def validate_entries_streaming(split: SplitLines) -> list[Finding]:
     }
     previous: int | None = None
     seen_traces: set[str] = set()
+    check_digits: dict[str, int] = {}
     service = None
     sec = ""
     odfi = ""
@@ -505,8 +506,13 @@ def validate_entries_streaming(split: SplitLines) -> list[Finding]:
             add("ED004", "Routing check digit is missing.", "check_digit")
         elif len(check) != 1 or not check.isdigit():
             add("ED004", "Routing check digit must be one digit.", "check_digit")
-        elif int(check) != aba_check_digit(rdfi):
-            add("ED004", "Routing check digit does not match.", "check_digit")
+        else:
+            expected_check = check_digits.get(rdfi)
+            if expected_check is None:
+                expected_check = aba_check_digit(rdfi)
+                check_digits[rdfi] = expected_check
+            if int(check) != expected_check:
+                add("ED004", "Routing check digit does not match.", "check_digit")
         if not account.strip():
             add("ED005", "DFI account number must not be blank.", "dfi_account_number")
         elif account[:1].isspace():
