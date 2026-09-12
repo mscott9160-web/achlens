@@ -154,7 +154,7 @@ def generate_ach_file(
                 record_type_code=8,
                 service_class_code=service_class,
                 entry_addenda_count=count,
-                entry_hash=entry_hash,
+                entry_hash=entry_hash % 10_000_000_000,
                 total_debit_entry_dollar_amount=debit_total,
                 total_credit_entry_dollar_amount=credit_total,
                 company_identification="9876543210",
@@ -162,7 +162,9 @@ def generate_ach_file(
                 batch_number=batch_number,
             )
         )
-        batch_totals.append((count, entry_hash, debit_total, credit_total))
+        batch_totals.append(
+            (count, entry_hash % 10_000_000_000, debit_total, credit_total)
+        )
     total_entries = sum(item[0] for item in batch_totals)
     total_hash = sum(item[1] for item in batch_totals) % 10_000_000_000
     total_debit = sum(item[2] for item in batch_totals)
