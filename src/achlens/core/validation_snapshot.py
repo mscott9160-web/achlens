@@ -256,12 +256,17 @@ def build_validation_snapshot(text: str) -> ValidationSnapshot:
     entry_layout: str | None = None
     after_control = False
 
+    def flush_addenda() -> None:
+        nonlocal addenda
+        if addenda and entries:
+            last = entries[-1]
+            entries[-1] = _entry(last.detail, last.addenda + tuple(addenda))
+            addenda = []
+
     def close_batch() -> None:
         nonlocal current_header, entries, addenda, control
         if current_header is not None:
-            if addenda and entries:
-                last = entries[-1]
-                entries[-1] = _entry(last.detail, last.addenda + tuple(addenda))
+            flush_addenda()
             batches.append(
                 ValidationBatch(
                     current_header, tuple(entries), control, _batch_aggregates(entries)
@@ -301,6 +306,7 @@ def build_validation_snapshot(text: str) -> ValidationSnapshot:
             and control is None
             and entry_layout
         ):
+            flush_addenda()
             entries.append(_entry(_record(source, "6", layouts[entry_layout]), tuple()))
         elif code == "7" and entries and control is None:
             layout_name = {
@@ -322,6 +328,7 @@ def build_validation_snapshot(text: str) -> ValidationSnapshot:
                     )
                 )
         elif code == "8" and current_header is not None and control is None:
+            flush_addenda()
             control = _record(source, "8", layouts["batch_control"])
         elif (
             code == "9"
@@ -367,4 +374,63 @@ def build_validation_snapshot(text: str) -> ValidationSnapshot:
     )
 
 
-__all__ = ["ValidationSnapshot", "build_validation_snapshot"]
+def validation_context_from_snapshot(text: str, snapshot: ValidationSnapshot) -> object:
+    """Adapt a snapshot to the existing rule context for parity tests."""
+    from .model import AchFile, Batch, Entry, FieldValue, Record
+    from .rules.structural import ValidationContext
+
+    def record(source: ValidationRecord) -> Record:
+        fields = {
+            name: FieldValue(
+                field.name,
+                field.start,
+                field.end,
+                field.raw,
+                field.value,
+            )
+            for name, field in source.fields.items()
+        }
+        return Record(
+            source.line.line_number,
+            source.line.record_type,
+            source.layout,
+            source.line.raw,
+            fields,
+        )
+
+    batches: list[Batch] = []
+    for batch in snapshot.batches:
+        entries = [
+            Entry(record(entry.detail), [record(addenda) for addenda in entry.addenda])
+            for entry in batch.entries
+        ]
+        batches.append(
+            Batch(
+                header=record(batch.header) if batch.header else None,
+                entries=entries,
+                control=record(batch.control) if batch.control else None,
+            )
+        )
+    ach_file = AchFile(
+        header=record(snapshot.header) if snapshot.header else None,
+        batches=batches,
+        control=record(snapshot.file_control) if snapshot.file_control else None,
+        padding=[
+            Record(line.line_number, "padding", "", line.raw, {})
+            for line in snapshot.padding
+        ],
+        line_count=snapshot.line_count,
+        line_ending=snapshot.line_ending.lower(),
+        unparsed=[
+            Record(line.line_number, line.record_type, "unknown", line.raw, {})
+            for line in snapshot.unparsed
+        ],
+    )
+    return ValidationContext(text, split_lines(text), ach_file)
+
+
+__all__ = [
+    "ValidationSnapshot",
+    "build_validation_snapshot",
+    "validation_context_from_snapshot",
+]
