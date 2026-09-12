@@ -10,7 +10,12 @@ from .rules.controls import validate_controls
 from .rules.entry import validate_entries
 from .rules.headers import validate_headers
 from .rules.structural import Finding, ValidationContext, validate_structure
-from .streaming import scan, validate_headers_streaming, validate_structure_streaming
+from .streaming import (
+    scan,
+    validate_entries_streaming,
+    validate_headers_streaming,
+    validate_structure_streaming,
+)
 
 
 @dataclass(frozen=True)
@@ -112,6 +117,8 @@ def validate(
             if use_streaming and index == 0
             else validate_headers_streaming(content, context.split)
             if use_streaming and index == 1
+            else validate_entries_streaming(context.split)
+            if use_streaming and index == 2
             else runner(context)
         )
     ]
