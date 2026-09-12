@@ -3,7 +3,7 @@
 from mcp.server import MCPServer
 
 from .config import ServerConfig
-from .tools import validate_ach_file
+from .tools import summarize_ach_file, validate_ach_file
 
 
 _config = ServerConfig.from_environment()
@@ -17,6 +17,7 @@ def server_status() -> dict[str, str]:
 
 
 mcp.tool()(validate_ach_file)
+mcp.tool()(summarize_ach_file)
 
 
 def run() -> None:
@@ -24,4 +25,4 @@ def run() -> None:
     mcp.run()
 
 
-__all__ = ["mcp", "run", "server_status", "validate_ach_file"]
+__all__ = ["mcp", "run", "server_status", "summarize_ach_file", "validate_ach_file"]

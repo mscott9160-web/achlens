@@ -10,7 +10,11 @@ from achlens.server.app import mcp as server  # noqa: E402
 
 def test_server_registers_expected_tool_without_protocol_output() -> None:
     tools = asyncio.run(server.list_tools())
-    assert [tool.name for tool in tools] == ["server_status", "validate_ach_file"]
+    assert [tool.name for tool in tools] == [
+        "server_status",
+        "validate_ach_file",
+        "summarize_ach_file",
+    ]
     assert tools[0].description == "Return the local achlens server status."
 
 
