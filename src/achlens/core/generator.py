@@ -30,6 +30,7 @@ def _layout_for_sec(sec_code: str) -> str:
     return {
         "PPD": "entry_detail_ppd",
         "CCD": "entry_detail_ccd",
+        "CTX": "entry_detail_ccd",
         "WEB": "entry_detail_web",
     }[sec_code]
 
@@ -48,8 +49,8 @@ def generate_ach_file(
 ) -> str:
     """Generate a balanced synthetic ACH file for local testing only."""
     sec_code = sec_code.upper()
-    if sec_code not in {"PPD", "CCD", "WEB"}:
-        raise ValueError("sec_code must be PPD, CCD, or WEB")
+    if sec_code not in {"PPD", "CCD", "CTX", "WEB"}:
+        raise ValueError("sec_code must be PPD, CCD, CTX, or WEB")
     if not 1 <= batches <= 50:
         raise ValueError("batches must be between 1 and 50")
     if not 1 <= entries_per_batch <= 10_000:
@@ -125,7 +126,7 @@ def generate_ach_file(
                 "addenda_record_indicator": int(include_addenda),
                 "trace_number": trace,
             }
-            if sec_code == "CCD":
+            if sec_code in {"CCD", "CTX"}:
                 fields["receiving_company_name"] = fields.pop("individual_name")
             if sec_code == "WEB":
                 fields["payment_type_code"] = "S"

@@ -96,6 +96,7 @@ def ad001(context: ValidationContext) -> Iterable[Finding]:
             valid = code in {
                 "PPD": {"05"},
                 "CCD": {"05"},
+                "CTX": {"05"},
                 "WEB": {"05"},
                 "RET": {"99"},
                 "RETURN": {"99"},

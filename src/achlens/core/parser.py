@@ -104,6 +104,7 @@ def parse(text: str, layouts: Mapping[str, RecordLayout] | None = None) -> AchFi
             layout_name = {
                 "PPD": "entry_detail_ppd",
                 "CCD": "entry_detail_ccd",
+                "CTX": "entry_detail_ccd",
                 "WEB": "entry_detail_web",
             }.get(sec_code)
             record = (

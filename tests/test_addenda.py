@@ -136,7 +136,7 @@ def test_ad001_allows_only_context_specific_addenda_types() -> None:
         assert "AD001" in _ids(
             _context(sec, [_record("addenda", 4, {"addenda_type_code": invalid}, "7")])
         )
-    assert "AD001" in _ids(_context("CTX", [_05()]))
+    assert "AD001" not in _ids(_context("CTX", [_05()]))
 
 
 def test_return_addenda_recognizes_codes_and_requires_fifteen_digit_trace() -> None:

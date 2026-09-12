@@ -453,7 +453,7 @@ def lookup_ach_code(kind: str, code: str) -> dict[str, object]:
 
 
 def generate_test_ach_file(
-    sec_code: Literal["PPD", "CCD", "WEB"] = "PPD",
+    sec_code: Literal["PPD", "CCD", "CTX", "WEB"] = "PPD",
     batches: int = 1,
     entries_per_batch: int = 5,
     service_class: Literal[200, 220, 225] = 200,
