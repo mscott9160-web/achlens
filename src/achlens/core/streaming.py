@@ -6,6 +6,7 @@ the rule-facing streaming adapter has parity coverage.
 """
 
 from dataclasses import dataclass
+from typing import Any
 
 from .calculators import aba_check_digit
 from .data.entry_codes import (
@@ -17,10 +18,11 @@ from .data.entry_codes import (
     ZERO_DOLLAR_CODES,
 )
 from .layouts import default_layouts
-from .lines import SplitLines, split_lines
+from .lines import LineRecord, SplitLines, split_lines
 from .model import AchFile, Batch
 from .parser import _layout_record
 from .rules.addenda import KNOWN_NOC_CODES, KNOWN_RETURN_CODES, addenda_rule_registry
+from .rules.controls import control_rule_registry
 from .rules.entry import entry_rule_registry
 from .rules.headers import validate_headers
 from .rules.structural import Finding, ValidationContext, structural_rule_registry
@@ -213,6 +215,232 @@ def validate_addenda_streaming(split: SplitLines) -> list[Finding]:
         finding
         for rule_id in addenda_rule_registry.implementations
         for finding in findings_by_rule[rule_id]
+    ]
+
+
+def validate_controls_streaming(split: SplitLines) -> list[Finding]:
+    """Evaluate BC/FC rules from fixed-width control and aggregate state."""
+    layouts = default_layouts()
+    header_fields = {f.name: (f.start, f.end) for f in layouts["batch_header"].fields}
+    batch_fields = {f.name: (f.start, f.end) for f in layouts["batch_control"].fields}
+    file_fields = {f.name: (f.start, f.end) for f in layouts["file_control"].fields}
+
+    def field(content: str, fields: dict[str, tuple[int, int]], name: str) -> str:
+        start, end = fields.get(name, (1, 0))
+        return _slice(content, start, end)
+
+    def finding(
+        rule_id: str,
+        line: LineRecord | None,
+        fields: dict[str, tuple[int, int]],
+        name: str,
+        expected: Any,
+        actual: str,
+        message: str,
+        severity: str | None = None,
+    ) -> Finding:
+        spec = control_rule_registry.specs[rule_id]
+        return Finding(
+            rule_id=rule_id,
+            severity=severity or spec.severity,
+            message=message,
+            fix_hint=spec.fix_hint or None,
+            line_number=line.line_number if line else None,
+            record_type=line.content[:1]
+            if line
+            else ("9" if rule_id.startswith("FC") else "8"),
+            position=fields.get(name, (None, None))[0],
+            field=name,
+            expected=str(expected),
+            actual=actual,
+        )
+
+    batches: list[dict[str, Any]] = []
+    current: dict[str, Any] | None = None
+    for line in split.records:
+        code = line.content[:1]
+        if code == "5":
+            current = {
+                "header": line,
+                "control": None,
+                "count": 0,
+                "hash": 0,
+                "debit": 0,
+                "credit": 0,
+                "pending": False,
+            }
+            batches.append(current)
+        elif code == "6" and current is not None:
+            current["count"] += 1
+            rdfi = _slice(line.content, 4, 11)
+            if rdfi.isdigit():
+                current["hash"] = (current["hash"] + int(rdfi)) % 10_000_000_000
+            transaction = _slice(line.content, 2, 3)
+            amount = _slice(line.content, 30, 39)
+            transaction_code = int(transaction) if transaction.isdigit() else None
+            if (
+                transaction_code in DEBIT_CODES | CREDIT_CODES
+                and amount.isdigit()
+                and transaction_code not in PRENOTE_CODES | ZERO_DOLLAR_CODES
+            ):
+                if transaction_code in DEBIT_CODES:
+                    current["debit"] += int(amount)
+                else:
+                    current["credit"] += int(amount)
+            current["pending"] = True
+        elif code == "7" and current is not None and current["pending"]:
+            current["count"] += 1
+        elif code == "8" and current is not None:
+            current["control"] = line
+            current["pending"] = False
+
+    by_rule: dict[str, list[Finding]] = {
+        rule_id: [] for rule_id in control_rule_registry.implementations
+    }
+
+    def compare(
+        rule_id: str,
+        line: LineRecord | None,
+        fields: dict[str, tuple[int, int]],
+        name: str,
+        expected: Any,
+        message: str,
+    ) -> None:
+        actual = field(line.content, fields, name) if line else ""
+        if (int(actual) if actual.isdigit() else None) != expected:
+            by_rule[rule_id].append(
+                finding(rule_id, line, fields, name, expected, actual, message)
+            )
+
+    text_comparisons = (
+        (
+            "BC001",
+            "service_class_code",
+            "Batch control service class does not match the header.",
+        ),
+        (
+            "BC006",
+            "company_identification",
+            "Batch control company identification does not match.",
+        ),
+        (
+            "BC007",
+            "originating_dfi_identification",
+            "Batch control ODFI identification does not match.",
+        ),
+        ("BC008", "batch_number", "Batch control number does not match the header."),
+    )
+    for batch in batches:
+        header = batch["header"]
+        control = batch["control"]
+        for rule_id, name, message in text_comparisons:
+            expected = field(header.content, header_fields, name)
+            actual = field(control.content, batch_fields, name) if control else ""
+            if actual != expected:
+                by_rule[rule_id].append(
+                    finding(
+                        rule_id, control, batch_fields, name, expected, actual, message
+                    )
+                )
+        compare(
+            "BC002",
+            control,
+            batch_fields,
+            "entry_addenda_count",
+            batch["count"],
+            "Batch entry/addenda count does not match.",
+        )
+        compare(
+            "BC003",
+            control,
+            batch_fields,
+            "entry_hash",
+            batch["hash"],
+            "Batch entry hash does not match.",
+        )
+        compare(
+            "BC004",
+            control,
+            batch_fields,
+            "total_debit_entry_dollar_amount",
+            batch["debit"],
+            "Batch debit total does not match.",
+        )
+        compare(
+            "BC005",
+            control,
+            batch_fields,
+            "total_credit_entry_dollar_amount",
+            batch["credit"],
+            "Batch credit total does not match.",
+        )
+        for name in ("message_authentication_code", "reserved"):
+            actual = field(control.content, batch_fields, name) if control else ""
+            if actual.strip():
+                by_rule["BC009"].append(
+                    finding(
+                        "BC009",
+                        control,
+                        batch_fields,
+                        name,
+                        "blank",
+                        actual,
+                        "Batch control authentication/reserved field should be blank.",
+                        "warning",
+                    )
+                )
+
+    file_control: LineRecord | None = None
+    for line in reversed(split.records):
+        if line.content[:1] == "9" and line.content != "9" * 94:
+            file_control = line
+            break
+    values = {
+        "batch_count": len(batches),
+        "block_count": (len(split.records) + 9) // 10,
+        "entry_addenda_count": sum(batch["count"] for batch in batches),
+        "entry_hash": sum(batch["hash"] for batch in batches) % 10_000_000_000,
+        "total_debit_entry_dollar_amount": sum(batch["debit"] for batch in batches),
+        "total_credit_entry_dollar_amount": sum(batch["credit"] for batch in batches),
+    }
+    file_comparisons = (
+        ("FC001", "batch_count", "File batch count does not match."),
+        ("FC002", "block_count", "File block count does not match."),
+        ("FC003", "entry_addenda_count", "File entry/addenda count does not match."),
+        ("FC004", "entry_hash", "File entry hash does not match."),
+        (
+            "FC005",
+            "total_debit_entry_dollar_amount",
+            "File debit total does not match.",
+        ),
+        (
+            "FC006",
+            "total_credit_entry_dollar_amount",
+            "File credit total does not match.",
+        ),
+    )
+    for rule_id, name, message in file_comparisons:
+        compare(rule_id, file_control, file_fields, name, values[name], message)
+    reserved = (
+        field(file_control.content, file_fields, "reserved") if file_control else ""
+    )
+    if reserved.strip():
+        by_rule["FC007"].append(
+            finding(
+                "FC007",
+                file_control,
+                file_fields,
+                "reserved",
+                "blank",
+                reserved,
+                "File control reserved field should be blank.",
+                "warning",
+            )
+        )
+    return [
+        item
+        for rule_id in control_rule_registry.implementations
+        for item in by_rule[rule_id]
     ]
 
 

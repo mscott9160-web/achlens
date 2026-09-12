@@ -43,6 +43,32 @@ def test_streaming_matches_header_mutations(monkeypatch) -> None:
         ]
 
 
+def test_streaming_matches_control_mutations_and_truncation(monkeypatch) -> None:
+    content = valid_file()
+    mutations = (
+        set_field(content, 4, "batch_control", "entry_addenda_count", 9),
+        set_field(content, 4, "batch_control", "entry_hash", 99999999),
+        set_field(content, 4, "batch_control", "total_debit_entry_dollar_amount", 1),
+        set_field(content, 4, "batch_control", "total_credit_entry_dollar_amount", 1),
+        set_field(content, 5, "file_control", "batch_count", 9),
+        set_field(content, 5, "file_control", "entry_hash", 99999999),
+        set_field(content, 5, "file_control", "total_credit_entry_dollar_amount", 1),
+        set_field(content, 5, "file_control", "block_count", 9),
+    )
+    for mutated in mutations:
+        for max_findings in (0, 1, 200):
+            assert _validate(mutated, monkeypatch, True) == _validate(
+                mutated, monkeypatch, False
+            )
+            monkeypatch.setenv("ACHLENS_INTERNAL_STREAMING_VALIDATION", "1")
+            streaming = validate(
+                mutated, min_severity="info", max_findings=max_findings
+            )
+            monkeypatch.delenv("ACHLENS_INTERNAL_STREAMING_VALIDATION", raising=False)
+            legacy = validate(mutated, min_severity="info", max_findings=max_findings)
+            assert streaming == legacy
+
+
 def test_streaming_matches_mutated_and_malformed_fixtures(monkeypatch) -> None:
     mutations = (
         set_field(valid_file(), 3, "entry_detail_ppd", "amount", 999),

@@ -13,6 +13,7 @@ from .rules.structural import Finding, ValidationContext, validate_structure
 from .streaming import (
     scan,
     validate_addenda_streaming,
+    validate_controls_streaming,
     validate_entries_streaming,
     validate_headers_streaming,
     validate_structure_streaming,
@@ -122,6 +123,17 @@ def validate(
             if use_streaming and index == 2
             else validate_addenda_streaming(context.split)
             if use_streaming and index == 3
+            else validate_controls_streaming(context.split)
+            if use_streaming
+            and index == 4
+            and sum(line.content[:1] == "8" for line in context.split.records)
+            == sum(line.content[:1] == "5" for line in context.split.records)
+            and all(
+                line.length.value == "exact"
+                for line in context.split.records
+                if line.content[:1] == "8"
+                or (line.content[:1] == "9" and line.content != "9" * 94)
+            )
             else runner(context)
         )
     ]
