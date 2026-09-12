@@ -120,6 +120,12 @@ def test_batch_numbers_must_ascend() -> None:
     assert sum(f.rule_id == "BH011" for f in findings) == 2
 
 
+def test_federal_reserve_holiday_is_a_warning() -> None:
+    findings = _findings("\n".join([_header(), _batch(effective_entry_date=260704)]))
+    holiday = next(f for f in findings if f.rule_id == "BH012")
+    assert holiday.severity == "warning"
+
+
 def test_unknown_sec_is_error_and_missing_sec_is_error() -> None:
     unknown = next(
         f

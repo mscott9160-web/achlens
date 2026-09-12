@@ -164,6 +164,15 @@
 - id: BH011
   <<: *bh
   title: Batch numbers ascend
+- id: BH012
+  category: BH
+  severity: warning
+  title: Effective entry date is on a Federal Reserve schedule holiday
+  description: Effective entry date is listed in the Federal Reserve K.8 schedule.
+  fix_hint: Confirm the intended settlement date with the applicable operator and bank schedule.
+  applies_to: ["5"]
+  source: https://www.federalreserve.gov/aboutthefed/k8.htm
+  status: VERIFIED
 
 - &ed
   template: true

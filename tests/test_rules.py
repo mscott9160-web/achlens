@@ -10,7 +10,7 @@ from achlens.core.rules.registry import RuleRegistry, RuleSpec, load_rule_regist
 EXPECTED_IDS = {
     *(f"S{i:03d}" for i in range(1, 15)),
     *(f"FH{i:03d}" for i in range(1, 11)),
-    *(f"BH{i:03d}" for i in range(1, 12)),
+    *(f"BH{i:03d}" for i in range(1, 13)),
     *(f"ED{i:03d}" for i in range(1, 17)),
     *(f"AD{i:03d}" for i in range(1, 9)),
     *(f"BC{i:03d}" for i in range(1, 10)),
@@ -39,7 +39,7 @@ def _stub(_context):
 def test_catalog_contains_declared_ids_and_representative_metadata() -> None:
     registry = load_rule_registry()
 
-    assert len(registry.specs) == 75
+    assert len(registry.specs) == 76
     assert set(registry.specs) == EXPECTED_IDS
     assert registry.specs["S001"].fix_hint.startswith("Editors may strip")
     assert registry.specs["S013"].severity == "warning"

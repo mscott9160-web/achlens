@@ -4,6 +4,7 @@ import re
 from collections.abc import Iterable
 from datetime import datetime
 
+from ..calendar import is_federal_reserve_holiday
 from .registry import RuleRegistry, default_rule_registry
 from .structural import Finding, Rule, ValidationContext, _finding
 
@@ -361,6 +362,22 @@ def bh011(context):
             previous = int(value)
 
 
+def bh012(context):
+    for record, _ in _batches(context):
+        value = _raw(record, "effective_entry_date")
+        if _valid_date(value) and is_federal_reserve_holiday(
+            datetime.strptime(value, "%y%m%d").date()
+        ):
+            yield _header_finding(
+                "BH012",
+                context,
+                "Effective entry date is on a Federal Reserve schedule holiday; "
+                "this is not a bank-specific settlement determination.",
+                line=record,
+                position=70,
+            )
+
+
 header_rule_registry = RuleRegistry(
     spec
     for spec in default_rule_registry().specs.values()
@@ -369,7 +386,7 @@ header_rule_registry = RuleRegistry(
 _RULES: dict[str, Rule] = {
     f"FH{index:03d}": globals()[f"fh{index:03d}"] for index in range(1, 11)
 }
-_RULES.update({f"BH{index:03d}": globals()[f"bh{index:03d}"] for index in range(1, 12)})
+_RULES.update({f"BH{index:03d}": globals()[f"bh{index:03d}"] for index in range(1, 13)})
 for _rule_id, _function in _RULES.items():
     header_rule_registry.register(_rule_id, _function)
 header_rule_registry.parity_check()
