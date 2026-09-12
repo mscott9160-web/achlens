@@ -1,0 +1,23 @@
+"""Official MCP SDK v2 server entry point."""
+
+from mcp.server import MCPServer
+
+from .config import ServerConfig
+
+
+_config = ServerConfig.from_environment()
+mcp = MCPServer("achlens", version="0.1.0", log_level=_config.log_level)
+
+
+@mcp.tool()
+def server_status() -> dict[str, str]:
+    """Return the local achlens server status."""
+    return {"name": "achlens", "status": "ready", "transport": "stdio"}
+
+
+def run() -> None:
+    """Run achlens over the SDK's default stdio transport."""
+    mcp.run()
+
+
+__all__ = ["mcp", "run", "server_status"]

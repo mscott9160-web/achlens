@@ -14,6 +14,14 @@ def cli_callback() -> None:
     """Run the achlens command-line interface."""
 
 
+@app.command()
+def serve() -> None:
+    """Run the MCP server over stdio."""
+    from achlens.server.app import run
+
+    run()
+
+
 def main() -> None:
     """Launch the Typer application."""
     app()
