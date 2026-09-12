@@ -1,0 +1,43 @@
+name: Differential Validation
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 3 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  differential:
+    runs-on: ubuntu-latest
+    env:
+      ACHLENS_DIFFERENTIAL_COMMAND: ${{ secrets.ACHLENS_DIFFERENTIAL_COMMAND }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: latest
+          enable-cache: false
+      - name: Set up Python 3.12
+        run: uv python install 3.12
+      - name: Install dependencies
+        run: uv sync --python 3.12
+      - name: Run differential validation
+        shell: bash
+        run: |
+          mkdir -p differential-results
+          if [ -z "${ACHLENS_DIFFERENTIAL_COMMAND:-}" ]; then
+            echo "SKIP: ACHLENS_DIFFERENTIAL_COMMAND is not configured"
+            printf '{"status":"skipped","reason":"ACHLENS_DIFFERENTIAL_COMMAND is not configured"}\n' > differential-results/summary.json
+            exit 0
+          fi
+          uv run python scripts/differential_validation.py \
+            --artifact differential-results/disagreements.json
+      - name: Upload differential artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: differential-validation
+          path: differential-results/
+          if-no-files-found: error

@@ -13,35 +13,68 @@ import json
 import os
 import shlex
 import subprocess
+import sys
 import tempfile
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Sequence
 
 from achlens.core import generate_ach_file, validate
 
-_CASES = (
-    ("valid", {}),
-    ("bad_check_digit", {"inject_errors": ["ED004"]}),
-    ("bad_batch_count", {"inject_errors": ["BC002"]}),
-    ("bad_file_hash", {"inject_errors": ["FC004"]}),
-    ("bad_padding", {"inject_errors": ["S011"]}),
-)
+
+@dataclass(frozen=True)
+class DifferentialCase:
+    rule: str
+    mutation: str
+    case: int
+    options: dict[str, list[str]]
+
+    @property
+    def name(self) -> str:
+        prefix = "valid" if self.rule == "none" else f"bad_{self.mutation}"
+        return f"{prefix}-{self.case:03d}"
 
 
-def main() -> int:
+def build_cases() -> tuple[DifferentialCase, ...]:
+    mutations = (
+        ("none", "baseline", {}),
+        ("ED004", "check_digit", {"inject_errors": ["ED004"]}),
+        ("BC002", "batch_count", {"inject_errors": ["BC002"]}),
+        ("FC004", "file_hash", {"inject_errors": ["FC004"]}),
+        ("S011", "padding", {"inject_errors": ["S011"]}),
+    )
+    return tuple(
+        DifferentialCase(rule, mutation, case, options)
+        for case in range(1, 21)
+        for rule, mutation, options in mutations
+    )
+
+
+_CASES = build_cases()
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--artifact", type=Path)
+    arguments = parser.parse_args([] if argv is None else argv)
     command_text = os.environ.get("ACHLENS_DIFFERENTIAL_COMMAND")
     if not command_text:
         print("SKIP: ACHLENS_DIFFERENTIAL_COMMAND is not configured")
         return 0
     command = shlex.split(command_text)
-    disagreements: list[str] = []
+    disagreements: list[dict[str, object]] = []
     with tempfile.TemporaryDirectory(prefix="achlens-differential-") as directory:
         root = Path(directory)
-        for name, options in _CASES:
+        for differential_case in _CASES:
             content = generate_ach_file(
-                seed=20260912, effective_date="260912", **options
+                seed=20260912 + differential_case.case,
+                effective_date="260912",
+                **differential_case.options,
             )
             expected = validate(content).valid
-            path = root / f"{name}.ach"
+            path = root / f"{differential_case.name}.ach"
             path.write_text(content, encoding="ascii")
             completed = subprocess.run(
                 [*command, str(path)],
@@ -51,23 +84,54 @@ def main() -> int:
             )
             if completed.returncode != 0:
                 disagreements.append(
-                    f"{name}: external command exited {completed.returncode}"
+                    {
+                        "rule": differential_case.rule,
+                        "mutation": differential_case.mutation,
+                        "case": differential_case.case,
+                        "triage_status": "untriaged",
+                        "detail": f"external command exited {completed.returncode}",
+                    }
                 )
                 continue
             try:
                 actual = bool(json.loads(completed.stdout)["valid"])
             except (KeyError, json.JSONDecodeError) as error:
-                disagreements.append(f"{name}: invalid external JSON ({error})")
+                disagreements.append(
+                    {
+                        "rule": differential_case.rule,
+                        "mutation": differential_case.mutation,
+                        "case": differential_case.case,
+                        "triage_status": "untriaged",
+                        "detail": f"invalid external JSON ({error})",
+                    }
+                )
                 continue
             if actual != expected:
-                disagreements.append(f"{name}: achlens={expected}, external={actual}")
+                disagreements.append(
+                    {
+                        "rule": differential_case.rule,
+                        "mutation": differential_case.mutation,
+                        "case": differential_case.case,
+                        "triage_status": "untriaged",
+                        "detail": f"achlens={expected}, external={actual}",
+                    }
+                )
+    if arguments.artifact:
+        arguments.artifact.parent.mkdir(parents=True, exist_ok=True)
+        arguments.artifact.write_text(
+            json.dumps(
+                {"case_count": len(_CASES), "disagreements": disagreements}, indent=2
+            )
+            + "\n",
+            encoding="utf-8",
+        )
     if disagreements:
         print("Differential disagreements:")
-        print("\n".join(disagreements))
+        print(json.dumps(disagreements, indent=2))
         return 1
     print(f"Differential agreement: {len(_CASES)} synthetic cases")
     return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(main(sys.argv[1:]))
