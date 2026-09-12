@@ -383,13 +383,7 @@ def validation_context_from_snapshot(text: str, snapshot: ValidationSnapshot) ->
 
     def record(source: ValidationRecord) -> Record:
         fields = {
-            name: FieldValue(
-                field.name,
-                field.start,
-                field.end,
-                field.raw,
-                field.value,
-            )
+            name: FieldValue(field.name, field.start, field.end, field.raw, field.value)
             for name, field in source.fields.items()
         }
         return Record(
@@ -416,7 +410,7 @@ def validation_context_from_snapshot(text: str, snapshot: ValidationSnapshot) ->
     ach_file = AchFile(
         header=record(snapshot.header) if snapshot.header else None,
         batches=batches,
-        control=record(snapshot.file_control) if snapshot.file_control else None,
+        control=record(snapshot.file_control),
         padding=[
             Record(line.line_number, "padding", "", line.raw, {})
             for line in snapshot.padding

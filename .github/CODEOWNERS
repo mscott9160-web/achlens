@@ -1,0 +1,3 @@
+# Default ownership for review routing. Keep release approval permissions in
+# repository settings; CODEOWNERS alone does not authorize a production release.
+* @mscott9160-web

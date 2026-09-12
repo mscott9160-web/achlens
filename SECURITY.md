@@ -34,5 +34,20 @@ not return repaired file content in path mode.
 ## Reporting
 
 Report suspected vulnerabilities privately through the repository's GitHub
-security channel. Do not include real ACH content in an issue, pull request,
-log, or test fixture.
+Security Advisories page: use **Report a vulnerability** under the repository's
+Security tab. Do not open a public issue or pull request for a suspected
+vulnerability.
+
+Include the affected version or commit, the smallest safe reproduction, impact,
+and any suggested mitigation. Redact credentials, payment data, account
+numbers, routing/account pairs, and real ACH files. If a report cannot be
+submitted through GitHub Security Advisories, open a private GitHub support
+request for repository access rather than disclosing the issue publicly.
+
+The repository owner triages reports, coordinates remediation with maintainers,
+and decides when a public advisory or release note is appropriate. The project
+does not promise a fixed response or resolution time; acknowledgement and
+status updates depend on severity and maintainer availability.
+
+Dependency maintenance, lockfile updates, and time-limited `pip-audit`
+exceptions are governed in [docs/dependency-governance.md](docs/dependency-governance.md).

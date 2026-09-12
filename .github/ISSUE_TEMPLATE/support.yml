@@ -1,0 +1,28 @@
+name: Support question
+description: Ask a setup, usage, or documentation question
+title: "[Support]: "
+labels:
+  - support
+body:
+  - type: markdown
+    attributes:
+      value: Use synthetic data only. This project is not a bank gateway or compliance advisor.
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context and attempted steps
+      description: Include your operating system, command, and relevant error text with sensitive values removed.
+    validations:
+      required: true

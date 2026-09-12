@@ -10,7 +10,11 @@ permissions:
   id-token: write
 
 jobs:
+  quality:
+    uses: ./.github/workflows/ci.yml
+
   build:
+    needs: quality
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -20,6 +24,12 @@ jobs:
           enable-cache: false
       - name: Set up Python
         run: uv python install 3.12
+      - name: Check lockfile
+        run: uv lock --check
+      - name: Check release metadata
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: uv run python scripts/check_release_metadata.py
       - name: Build package
         run: uv build
       - name: Check package metadata

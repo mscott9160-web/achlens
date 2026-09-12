@@ -1,13 +1,16 @@
 """Run all implemented ACH rules and build a bounded validation report."""
 
+import os
 from collections.abc import Callable
 from dataclasses import dataclass
 
+from .parser import parse
 from .rules.addenda import validate_addenda
 from .rules.controls import validate_controls
 from .rules.entry import validate_entries
 from .rules.headers import validate_headers
 from .rules.structural import Finding, ValidationContext, validate_structure
+from .streaming import scan
 
 
 @dataclass(frozen=True)
@@ -43,6 +46,21 @@ DEFAULT_RULE_RUNNERS: tuple[RuleRunner, ...] = (
 _SEVERITY_RANK = {"error": 0, "warning": 1, "info": 2}
 
 
+def _streaming_enabled() -> bool:
+    """Return the internal opt-in switch; this is intentionally not public API."""
+    return os.environ.get("ACHLENS_INTERNAL_STREAMING_VALIDATION") == "1"
+
+
+def _streaming_context(content: str) -> ValidationContext:
+    """Build the legacy context after the bounded streaming scan."""
+    split, _facts = scan(content)
+    return ValidationContext(
+        text=content,
+        split=split,
+        ach_file=parse(content, split=split),
+    )
+
+
 def _summary(context: ValidationContext) -> FileSummary:
     batches = context.ach_file.batches
     return FileSummary(
@@ -73,9 +91,19 @@ def validate(
         raise ValueError("min_severity must be error, warning, or info")
     if max_findings < 0:
         raise ValueError("max_findings cannot be negative")
-    context = (
-        ValidationContext.from_text(content) if isinstance(content, str) else content
+    use_streaming = (
+        isinstance(content, str)
+        and _streaming_enabled()
+        and runners is DEFAULT_RULE_RUNNERS
     )
+    if use_streaming:
+        context = _streaming_context(content)
+    else:
+        context = (
+            ValidationContext.from_text(content)
+            if isinstance(content, str)
+            else content
+        )
     all_findings = [finding for runner in runners for finding in runner(context)]
     if rule_ids is not None:
         all_findings = [

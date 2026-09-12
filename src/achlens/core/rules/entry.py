@@ -366,7 +366,9 @@ def _validate_entries_fast(context: ValidationContext) -> list[Finding]:
         )
         for entry in batch.entries:
             record = entry.detail
-            code_raw = _value(record, "transaction_code")
+            field_get = record.fields.get
+            code_field = field_get("transaction_code")
+            code_raw = code_field.raw if code_field else ""
             code = _number(code_raw)
             if code not in TRANSACTION_CODES:
                 findings_by_rule["ED001"].append(
@@ -390,8 +392,10 @@ def _validate_entries_fast(context: ValidationContext) -> list[Finding]:
                         "transaction_code",
                     )
                 )
-            rdfi = _value(record, "receiving_dfi_identification")
-            check = _value(record, "check_digit")
+            rdfi_field = field_get("receiving_dfi_identification")
+            rdfi = rdfi_field.raw if rdfi_field else ""
+            check_field = field_get("check_digit")
+            check = check_field.raw if check_field else ""
             if len(rdfi) != 8 or not rdfi.isdigit():
                 findings_by_rule["ED003"].append(
                     _emit(
@@ -432,7 +436,8 @@ def _validate_entries_fast(context: ValidationContext) -> list[Finding]:
                         "check_digit",
                     )
                 )
-            account = _value(record, "dfi_account_number")
+            account_field = field_get("dfi_account_number")
+            account = account_field.raw if account_field else ""
             if not account.strip():
                 findings_by_rule["ED005"].append(
                     _emit(
@@ -454,7 +459,8 @@ def _validate_entries_fast(context: ValidationContext) -> list[Finding]:
                         severity="warning",
                     )
                 )
-            amount_raw = _value(record, "amount")
+            amount_field = field_get("amount")
+            amount_raw = amount_field.raw if amount_field else ""
             amount = _number(amount_raw)
             if len(amount_raw) != 10 or not amount_raw.isdigit():
                 findings_by_rule["ED006"].append(
@@ -488,7 +494,8 @@ def _validate_entries_fast(context: ValidationContext) -> list[Finding]:
                 if record.layout == "entry_detail_ccd"
                 else "individual_name"
             )
-            if not _value(record, name_field).strip():
+            name_value = field_get(name_field)
+            if not (name_value.raw if name_value else "").strip():
                 findings_by_rule["ED009"].append(
                     _emit(
                         "ED009",
@@ -498,7 +505,8 @@ def _validate_entries_fast(context: ValidationContext) -> list[Finding]:
                         name_field,
                     )
                 )
-            indicator = _value(record, "addenda_record_indicator")
+            indicator_field = field_get("addenda_record_indicator")
+            indicator = indicator_field.raw if indicator_field else ""
             if indicator not in {"0", "1"} or (indicator == "1") != bool(entry.addenda):
                 findings_by_rule["ED010"].append(
                     _emit(
@@ -510,7 +518,8 @@ def _validate_entries_fast(context: ValidationContext) -> list[Finding]:
                         "addenda_record_indicator",
                     )
                 )
-            trace = _value(record, "trace_number")
+            trace_field = field_get("trace_number")
+            trace = trace_field.raw if trace_field else ""
             if not trace.isdigit() or len(trace) != 15:
                 findings_by_rule["ED011"].append(
                     _emit(
@@ -555,13 +564,12 @@ def _validate_entries_fast(context: ValidationContext) -> list[Finding]:
                         "trace_number",
                     )
                 )
+            payment_type_field = field_get("payment_type_code")
+            payment_type = payment_type_field.raw.strip() if payment_type_field else ""
             if (
                 record.layout == "entry_detail_web"
-                and _value(record, "payment_type_code").strip()
-                not in WEB_PAYMENT_TYPE_CODES
-                and not (
-                    sec == "TEL" and not _value(record, "payment_type_code").strip()
-                )
+                and payment_type not in WEB_PAYMENT_TYPE_CODES
+                and not (sec == "TEL" and not payment_type)
             ):
                 findings_by_rule["ED015"].append(
                     _emit(

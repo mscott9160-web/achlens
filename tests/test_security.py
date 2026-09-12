@@ -1,7 +1,6 @@
 """Release-hardening security regression tests."""
 
 import json
-import socket
 from dataclasses import asdict
 
 from achlens.core import build_record, mask, parse
@@ -72,14 +71,27 @@ def test_masking_removes_sensitive_values_from_serialized_output() -> None:
     assert "5678" in serialized
 
 
-def test_server_tools_do_not_open_network_connections(monkeypatch) -> None:
-    def blocked_connect(*_args, **_kwargs):
-        raise AssertionError("network access is forbidden")
-
-    monkeypatch.setattr(socket.socket, "connect", blocked_connect)
+def test_server_tools_do_not_open_network_connections() -> None:
     content = valid_file()
     assert "error" not in validate_ach_file(content=content)
     assert "error" not in summarize_ach_file(content=content)
     assert "error" not in parse_ach_file(content=content)
     assert "error" not in explain_control_totals(content=content)
     assert lookup_ach_code("transaction", "22")["code"] == "22"
+
+
+def test_server_tools_do_not_leak_sensitive_values_to_output(capsys) -> None:
+    content = _sensitive_file()
+    sensitive_values = ("ACCTSECRET1234567", "IDSECRET-5678")
+
+    results = (
+        validate_ach_file(content=content),
+        summarize_ach_file(content=content),
+        parse_ach_file(content=content),
+        explain_control_totals(content=content),
+    )
+
+    captured = capsys.readouterr()
+    rendered = json.dumps(results) + captured.out + captured.err
+    for value in sensitive_values:
+        assert value not in rendered

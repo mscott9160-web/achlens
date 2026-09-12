@@ -35,7 +35,7 @@ class ValidationContext:
     @classmethod
     def from_text(cls, text: str) -> "ValidationContext":
         lines = split_lines(text)
-        return cls(text=text, split=lines, ach_file=parse(text))
+        return cls(text=text, split=lines, ach_file=parse(text, split=lines))
 
 
 Rule = Callable[[ValidationContext], Iterable[Finding]]

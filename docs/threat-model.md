@@ -39,8 +39,15 @@ tool instructions or prose guidance.
   they provide.
 - Reference rows marked `UNVERIFIED` must not be presented as authoritative
   Nacha guidance.
-- Full no-network socket enforcement, dependency auditing, and differential
-  validation against moov-io/ach remain release-hardening work.
+- Pytest installs an autouse fixture that blocks external Python socket
+  connection entry points for the full test suite. Loopback connections remain
+  available because Windows asyncio uses one for its internal self-pipe. This
+  is not an OS-level sandbox: subprocesses, native extensions, loopback calls,
+  or non-socket network transports are outside the fixture's guarantee. CI must
+  therefore continue to run the complete pytest suite, and production
+  no-network behavior remains a code and deployment responsibility.
+- Dependency auditing and differential validation against moov-io/ach remain
+  release-hardening work.
 
 ## Release Checklist
 

@@ -3,7 +3,7 @@
 from collections.abc import Mapping
 
 from .layouts import FieldSpec, RecordLayout, default_layouts
-from .lines import LineRecord, split_lines
+from .lines import LineRecord, SplitLines, split_lines
 from .model import AchFile, Batch, Entry, FieldValue, Record, RecordType
 
 
@@ -59,10 +59,15 @@ def _layout_record(
     return _record(line, record_type, layouts.get(name))
 
 
-def parse(text: str, layouts: Mapping[str, RecordLayout] | None = None) -> AchFile:
+def parse(
+    text: str,
+    layouts: Mapping[str, RecordLayout] | None = None,
+    *,
+    split: SplitLines | None = None,
+) -> AchFile:
     """Parse ACH text while retaining every source line and recovering structure."""
     layouts = layouts or default_layouts()
-    split = split_lines(text)
+    split = split or split_lines(text)
     result = AchFile(
         line_count=len(split.records),
         line_ending=split.line_ending.value.upper()
