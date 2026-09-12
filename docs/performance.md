@@ -20,6 +20,25 @@ system, and hardware, so record the environment with any published result.
 The benchmark is intentionally opt-in and is not part of the ordinary unit-test
 job.
 
+The snapshot-adapter comparison can be run with:
+
+```text
+python scripts/benchmark_validation_paths.py --entries 100000
+```
+
+The current comparison is a correctness scaffold, not an optimization result:
+
+```text
+full_validation_seconds=6.153
+snapshot_adapter_validation_seconds=11.011
+findings_equal=True
+counts_equal=True
+```
+
+The adapter is slower because it reconstructs the existing rule-facing model.
+The production validator therefore remains on the full-parser path until a
+direct snapshot-native rule implementation avoids that reconstruction cost.
+
 ## Baseline
 
 Measured on 2026-09-12 with the current implementation and the configured
