@@ -29,7 +29,7 @@ Python 3.12 environment:
 entries_requested=100000
 records=100030
 generation_seconds=1.469
-validation_seconds=5.745
+validation_seconds=5.628
 validation_memory_measurement=tracemalloc
 peak_megabytes=321.0
 valid=True

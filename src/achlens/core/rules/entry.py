@@ -337,14 +337,253 @@ def entry_rule_registry() -> RuleRegistry:
 entry_rule_registry = entry_rule_registry()
 
 
+def _validate_entries_fast(context: ValidationContext) -> list[Finding]:
+    findings_by_rule: dict[str, list[Finding]] = {
+        rule_id: [] for rule_id in entry_rule_registry.implementations
+    }
+    previous_by_batch: dict[int, int | None] = {}
+    seen_traces: set[str] = set()
+    for batch_index, batch in enumerate(context.ach_file.batches):
+        previous = previous_by_batch.get(batch_index)
+        service = (
+            _number(_value(batch.header, "service_class_code"))
+            if batch.header
+            else None
+        )
+        odfi = _value(batch.header, "odfi_identification") if batch.header else ""
+        sec = (
+            _value(batch.header, "standard_entry_class_code").strip()
+            if batch.header
+            else ""
+        )
+        for entry in batch.entries:
+            record = entry.detail
+            code_raw = _value(record, "transaction_code")
+            code = _number(code_raw)
+            if code not in TRANSACTION_CODES:
+                findings_by_rule["ED001"].append(
+                    _emit(
+                        "ED001",
+                        context,
+                        record,
+                        "Transaction code is invalid.",
+                        "transaction_code",
+                    )
+                )
+            if (service == 220 and code in DEBIT_CODES) or (
+                service == 225 and code in CREDIT_CODES
+            ):
+                findings_by_rule["ED002"].append(
+                    _emit(
+                        "ED002",
+                        context,
+                        record,
+                        "Transaction code disagrees with the batch service class.",
+                        "transaction_code",
+                    )
+                )
+            rdfi = _value(record, "receiving_dfi_identification")
+            check = _value(record, "check_digit")
+            if len(rdfi) != 8 or not rdfi.isdigit():
+                findings_by_rule["ED003"].append(
+                    _emit(
+                        "ED003",
+                        context,
+                        record,
+                        "Receiving DFI identification must be 8 digits.",
+                        "receiving_dfi_identification",
+                    )
+                )
+            elif not check:
+                findings_by_rule["ED004"].append(
+                    _emit(
+                        "ED004",
+                        context,
+                        record,
+                        "Routing check digit is missing.",
+                        "check_digit",
+                    )
+                )
+            elif len(check) != 1 or not check.isdigit():
+                findings_by_rule["ED004"].append(
+                    _emit(
+                        "ED004",
+                        context,
+                        record,
+                        "Routing check digit must be one digit.",
+                        "check_digit",
+                    )
+                )
+            elif int(check) != aba_check_digit(rdfi):
+                findings_by_rule["ED004"].append(
+                    _emit(
+                        "ED004",
+                        context,
+                        record,
+                        "Routing check digit does not match.",
+                        "check_digit",
+                    )
+                )
+            account = _value(record, "dfi_account_number")
+            if not account.strip():
+                findings_by_rule["ED005"].append(
+                    _emit(
+                        "ED005",
+                        context,
+                        record,
+                        "DFI account number must not be blank.",
+                        "dfi_account_number",
+                    )
+                )
+            elif account[:1].isspace():
+                findings_by_rule["ED005"].append(
+                    _emit(
+                        "ED005",
+                        context,
+                        record,
+                        "DFI account number has leading spaces.",
+                        "dfi_account_number",
+                        severity="warning",
+                    )
+                )
+            amount_raw = _value(record, "amount")
+            amount = _number(amount_raw)
+            if len(amount_raw) != 10 or not amount_raw.isdigit():
+                findings_by_rule["ED006"].append(
+                    _emit("ED006", context, record, "Amount must be numeric.", "amount")
+                )
+            if code in PRENOTE_CODES | ZERO_DOLLAR_CODES and amount != 0:
+                findings_by_rule["ED007"].append(
+                    _emit(
+                        "ED007",
+                        context,
+                        record,
+                        "Prenote and zero-dollar entries must have amount zero.",
+                        "amount",
+                    )
+                )
+            if (
+                code in TRANSACTION_CODES - PRENOTE_CODES - ZERO_DOLLAR_CODES
+                and amount == 0
+            ):
+                findings_by_rule["ED008"].append(
+                    _emit(
+                        "ED008",
+                        context,
+                        record,
+                        "Live entry has amount zero.",
+                        "amount",
+                    )
+                )
+            name_field = (
+                "receiving_company_name"
+                if record.layout == "entry_detail_ccd"
+                else "individual_name"
+            )
+            if not _value(record, name_field).strip():
+                findings_by_rule["ED009"].append(
+                    _emit(
+                        "ED009",
+                        context,
+                        record,
+                        "Entry name must not be blank.",
+                        name_field,
+                    )
+                )
+            indicator = _value(record, "addenda_record_indicator")
+            if indicator not in {"0", "1"} or (indicator == "1") != bool(entry.addenda):
+                findings_by_rule["ED010"].append(
+                    _emit(
+                        "ED010",
+                        context,
+                        record,
+                        "Addenda indicator must be 0 or 1 and agree with "
+                        "attached addenda.",
+                        "addenda_record_indicator",
+                    )
+                )
+            trace = _value(record, "trace_number")
+            if not trace.isdigit() or len(trace) != 15:
+                findings_by_rule["ED011"].append(
+                    _emit(
+                        "ED011",
+                        context,
+                        record,
+                        "Trace number must be 15 digits.",
+                        "trace_number",
+                    )
+                )
+            current = _number(trace)
+            if current is not None and previous is not None and current <= previous:
+                findings_by_rule["ED012"].append(
+                    _emit(
+                        "ED012",
+                        context,
+                        record,
+                        "Trace numbers must ascend within the batch.",
+                        "trace_number",
+                    )
+                )
+            if current is not None:
+                previous = current
+            if trace in seen_traces and trace:
+                findings_by_rule["ED013"].append(
+                    _emit(
+                        "ED013",
+                        context,
+                        record,
+                        "Trace number is not unique within the file.",
+                        "trace_number",
+                    )
+                )
+            seen_traces.add(trace)
+            if odfi and trace and trace[:8] != odfi:
+                findings_by_rule["ED014"].append(
+                    _emit(
+                        "ED014",
+                        context,
+                        record,
+                        "Trace prefix does not match batch ODFI.",
+                        "trace_number",
+                    )
+                )
+            if (
+                record.layout == "entry_detail_web"
+                and _value(record, "payment_type_code").strip()
+                not in WEB_PAYMENT_TYPE_CODES
+            ):
+                findings_by_rule["ED015"].append(
+                    _emit(
+                        "ED015",
+                        context,
+                        record,
+                        "WEB payment type code is not in the allowed set.",
+                        "payment_type_code",
+                        severity="warning",
+                    )
+                )
+            if code in ZERO_DOLLAR_CODES and sec not in {"CCD", "CTX"}:
+                findings_by_rule["ED016"].append(
+                    _emit(
+                        "ED016",
+                        context,
+                        record,
+                        "Zero-dollar remittance code is outside CCD/CTX.",
+                        "transaction_code",
+                    )
+                )
+        previous_by_batch[batch_index] = previous
+    return [
+        finding
+        for rule_id in entry_rule_registry.implementations
+        for finding in findings_by_rule[rule_id]
+    ]
+
+
 def validate_entries(context: ValidationContext | str) -> list[Finding]:
     if isinstance(context, str):
         context = ValidationContext.from_text(context)
-    return [
-        finding
-        for rule in entry_rule_registry.implementations.values()
-        for finding in rule(context)
-    ]
+    return _validate_entries_fast(context)
 
 
 __all__ = ["entry_rule_registry", "validate_entries"]
