@@ -10,7 +10,7 @@ from .rules.controls import validate_controls
 from .rules.entry import validate_entries
 from .rules.headers import validate_headers
 from .rules.structural import Finding, ValidationContext, validate_structure
-from .streaming import scan
+from .streaming import scan, validate_structure_streaming
 
 
 @dataclass(frozen=True)
@@ -104,7 +104,15 @@ def validate(
             if isinstance(content, str)
             else content
         )
-    all_findings = [finding for runner in runners for finding in runner(context)]
+    all_findings = [
+        finding
+        for index, runner in enumerate(runners)
+        for finding in (
+            validate_structure_streaming(context.split)
+            if use_streaming and index == 0
+            else runner(context)
+        )
+    ]
     if rule_ids is not None:
         all_findings = [
             finding for finding in all_findings if finding.rule_id in rule_ids

@@ -51,3 +51,30 @@ def test_custom_runner_falls_back_even_when_streaming_is_enabled(monkeypatch) ->
     report = validate("", runners=(runner,))
     assert report.findings == [finding]
     assert report.counts_by_rule == {"CUSTOM": 1}
+
+
+def test_streaming_matches_legacy_for_deterministic_malformed_corpus(
+    monkeypatch,
+) -> None:
+    lines = valid_file().splitlines()
+    cases = []
+    for index in range(20):
+        mutated = list(lines)
+        mode = index % 5
+        line_index = index % len(mutated)
+        if mode == 0:
+            mutated[line_index] = mutated[line_index][: max(0, 93 - index)]
+        elif mode == 1:
+            mutated[line_index] += "X" * (index + 1)
+        elif mode == 2:
+            mutated[line_index] = ("X" if index % 2 else "") + mutated[line_index][1:]
+        elif mode == 3:
+            mutated.insert(line_index, "8" + " " * 93)
+        else:
+            mutated[line_index] = mutated[line_index].replace(" ", "A", 1)
+        cases.append("\n".join(mutated))
+
+    for content in cases:
+        assert _validate(content, monkeypatch, True) == _validate(
+            content, monkeypatch, False
+        )
