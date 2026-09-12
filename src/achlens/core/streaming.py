@@ -20,6 +20,7 @@ from .layouts import default_layouts
 from .lines import SplitLines, split_lines
 from .model import AchFile, Batch
 from .parser import _layout_record
+from .rules.addenda import KNOWN_NOC_CODES, KNOWN_RETURN_CODES, addenda_rule_registry
 from .rules.entry import entry_rule_registry
 from .rules.headers import validate_headers
 from .rules.structural import Finding, ValidationContext, structural_rule_registry
@@ -53,6 +54,166 @@ def _stream_entry_finding(
 
 def _slice(content: str, start: int, end: int) -> str:
     return content[start - 1 : end]
+
+
+def validate_addenda_streaming(split: SplitLines) -> list[Finding]:
+    """Evaluate AD rules from addenda slices and compact parent-entry state."""
+    if not any(line.content[:1] == "7" for line in split.records):
+        return []
+    findings_by_rule: dict[str, list[Finding]] = {
+        rule_id: [] for rule_id in addenda_rule_registry.implementations
+    }
+    layouts = default_layouts()
+    addenda_layout = layouts["addenda_05"]
+    fields = {field.name: (field.start, field.end) for field in addenda_layout.fields}
+    fields.update(
+        {
+            "return_reason_code": (4, 6),
+            "original_entry_trace_number": (7, 21),
+            "change_code": (4, 6),
+            "corrected_data": (36, 83),
+        }
+    )
+    pending_entry = None
+    pending_addenda = []
+    sec = ""
+
+    def finish_entry() -> None:
+        nonlocal pending_entry, pending_addenda
+        if pending_entry is None:
+            return
+        entry_line, entry_content, trace = pending_entry
+        expected_trace_suffix = trace[-7:]
+        for addenda_index, addenda in enumerate(pending_addenda):
+            addenda_line, addenda_content = addenda
+
+            def field(name: str) -> str:
+                start, end = fields.get(name, (1, 0))
+                return _slice(addenda_content, start, end)
+
+            code = field("addenda_type_code")
+
+            def add(rule_id: str, message: str, name: str, severity: str | None = None):
+                spec = addenda_rule_registry.specs[rule_id]
+                findings_by_rule[rule_id].append(
+                    Finding(
+                        rule_id=rule_id,
+                        severity=severity or spec.severity,
+                        message=message,
+                        fix_hint=spec.fix_hint or None,
+                        line_number=addenda_line.line_number,
+                        record_type="7",
+                        position=fields[name][0],
+                    )
+                )
+
+            valid_code = {
+                "PPD": {"05"},
+                "CCD": {"05"},
+                "CTX": {"05"},
+                "WEB": {"05"},
+                "RET": {"99"},
+                "RETURN": {"99"},
+                "NOC": {"98"},
+            }.get(sec, set())
+            if code not in valid_code:
+                add(
+                    "AD001",
+                    "Addenda type is invalid for its context.",
+                    "addenda_type_code",
+                )
+            if sec in {"PPD", "CCD", "WEB"} and addenda_index > 0:
+                add(
+                    "AD002",
+                    "PPD, CCD, and WEB entries may have at most one addenda record.",
+                    "addenda_type_code",
+                )
+            if (
+                sec in {"PPD", "CCD", "WEB"}
+                and code == "05"
+                and field("addenda_sequence_number") != "0001"
+            ):
+                add(
+                    "AD003",
+                    "Single-addenda sequence number must be 0001.",
+                    "addenda_sequence_number",
+                )
+            if (
+                sec in {"PPD", "CCD", "CTX", "WEB"}
+                and code == "05"
+                and field("entry_detail_sequence_number") != expected_trace_suffix
+            ):
+                add(
+                    "AD004",
+                    "Addenda entry-detail sequence number must match the last seven "
+                    "digits of the parent trace number.",
+                    "entry_detail_sequence_number",
+                )
+            if code == "99" and field("return_reason_code") not in KNOWN_RETURN_CODES:
+                add(
+                    "AD005",
+                    "Return reason code is not recognized.",
+                    "return_reason_code",
+                    "warning",
+                )
+            original_trace = field("original_entry_trace_number")
+            if code == "99" and (
+                len(original_trace) != 15 or not original_trace.isdigit()
+            ):
+                add(
+                    "AD006",
+                    "Original return trace number must be exactly 15 digits.",
+                    "original_entry_trace_number",
+                )
+            if code == "98" and field("change_code") not in KNOWN_NOC_CODES:
+                add(
+                    "AD007",
+                    "NOC change code is not recognized.",
+                    "change_code",
+                    "warning",
+                )
+            if code == "98" and not field("corrected_data").strip():
+                add(
+                    "AD008",
+                    "NOC corrected data must not be blank.",
+                    "corrected_data",
+                )
+        pending_entry = None
+        pending_addenda = []
+
+    for line in split.records:
+        code = line.content[:1]
+        if code == "5":
+            finish_entry()
+            sec = _slice(line.content, 51, 53).strip()
+        elif code == "6":
+            finish_entry()
+            layout = layouts.get(
+                {
+                    "PPD": "entry_detail_ppd",
+                    "CCD": "entry_detail_ccd",
+                    "WEB": "entry_detail_web",
+                }.get(sec, "entry_detail_ppd")
+            )
+            assert layout is not None
+            trace_start, trace_end = next(
+                (f.start, f.end) for f in layout.fields if f.name == "trace_number"
+            )
+            pending_entry = (
+                line,
+                line.content,
+                _slice(line.content, trace_start, trace_end),
+            )
+        elif code == "7" and pending_entry is not None:
+            pending_addenda.append((line, line.content))
+        elif code not in {"7"}:
+            finish_entry()
+    finish_entry()
+    return [
+        finding
+        for rule_id in addenda_rule_registry.implementations
+        for finding in findings_by_rule[rule_id]
+    ]
 
 
 def validate_entries_streaming(split: SplitLines) -> list[Finding]:

@@ -1,6 +1,7 @@
 """Parity coverage for the internal first streaming-validation slice."""
 
-from achlens.core import validate
+from achlens.core import build_record, validate
+from achlens.core.layouts import default_layouts
 from achlens.core.rules.structural import Finding, ValidationContext
 from tests.fixtures.builders import (
     inject_non_ascii,
@@ -95,3 +96,66 @@ def test_streaming_matches_legacy_for_deterministic_malformed_corpus(
         assert _validate(content, monkeypatch, True) == _validate(
             content, monkeypatch, False
         )
+
+
+def _with_addenda(sec: str, **values: object) -> str:
+    content = set_field(
+        valid_file(), 2, "batch_header", "standard_entry_class_code", sec
+    )
+    content = set_field(content, 3, "entry_detail_ppd", "addenda_record_indicator", 1)
+    addenda_values = {
+        "record_type_code": 7,
+        "addenda_type_code": "05",
+        "payment_related_information": "SENSITIVE-ACCOUNT-DATA",
+        "addenda_sequence_number": 1,
+        "entry_detail_sequence_number": 1,
+        "return_reason_code": "R01",
+        "original_entry_trace_number": "123456780000001",
+        "change_code": "C01",
+        "corrected_data": "UPDATED",
+        **values,
+    }
+    layout_name = {
+        "99": "addenda_99_return",
+        "98": "addenda_98_noc",
+    }.get(str(addenda_values["addenda_type_code"]), "addenda_05")
+    layout_fields = {field.name for field in default_layouts()[layout_name].fields}
+    addenda = build_record(
+        default_layouts()[layout_name],
+        **{
+            name: value
+            for name, value in addenda_values.items()
+            if name in layout_fields
+        },
+    )
+    lines = content.splitlines()
+    lines.insert(3, addenda)
+    return "\n".join(lines)
+
+
+def test_streaming_matches_addenda_mutations_for_ppd_ccd_ctx_web_and_tel(monkeypatch):
+    cases = [
+        _with_addenda("PPD", addenda_sequence_number=2),
+        _with_addenda("CCD", entry_detail_sequence_number=7654321),
+        _with_addenda("CTX", addenda_type_code="77"),
+        _with_addenda("WEB", addenda_type_code="77"),
+        _with_addenda("TEL", addenda_type_code="77"),
+    ]
+    for content in cases:
+        assert _validate(content, monkeypatch, True) == _validate(
+            content, monkeypatch, False
+        )
+
+
+def test_streaming_matches_addenda_ordering_and_sensitive_values(monkeypatch):
+    content = _with_addenda(
+        "PPD",
+        addenda_type_code="77",
+        payment_related_information="ACCOUNT-1234-SECRET",
+    )
+    lines = content.splitlines()
+    lines.insert(4, lines[3])
+    malformed = "\r\n".join(lines[:4] + [lines[4]] + lines[5:])
+    assert _validate(malformed, monkeypatch, True) == _validate(
+        malformed, monkeypatch, False
+    )

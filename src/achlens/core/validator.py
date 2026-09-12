@@ -12,6 +12,7 @@ from .rules.headers import validate_headers
 from .rules.structural import Finding, ValidationContext, validate_structure
 from .streaming import (
     scan,
+    validate_addenda_streaming,
     validate_entries_streaming,
     validate_headers_streaming,
     validate_structure_streaming,
@@ -119,6 +120,8 @@ def validate(
             if use_streaming and index == 1
             else validate_entries_streaming(context.split)
             if use_streaming and index == 2
+            else validate_addenda_streaming(context.split)
+            if use_streaming and index == 3
             else runner(context)
         )
     ]
