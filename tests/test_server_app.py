@@ -20,6 +20,7 @@ def test_server_registers_expected_tool_without_protocol_output() -> None:
         "lookup_ach_code",
         "generate_test_ach_file",
         "repair_control_records_tool",
+        "diff_ach_files_tool",
     ]
     assert tools[0].description == "Return the local achlens server status."
 
