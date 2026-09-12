@@ -8,7 +8,22 @@ from .registry import RuleRegistry, default_rule_registry
 from .structural import Finding, Rule, ValidationContext, _finding
 
 RECOGNIZED_SEC = frozenset({"CCD", "PPD", "WEB"})
-RECOGNIZED_STANDARD_SEC = frozenset({"CCD", "CTX", "IAT", "PPD", "TEL", "WEB"})
+RECOGNIZED_STANDARD_SEC = frozenset(
+    {
+        "ARC",
+        "BOC",
+        "CCD",
+        "CIE",
+        "CTX",
+        "IAT",
+        "POP",
+        "POS",
+        "PPD",
+        "RCK",
+        "TEL",
+        "WEB",
+    }
+)
 RECOGNIZED_SERVICE_CLASSES = frozenset({"200", "220", "225"})
 RECOGNIZED_ORIGINATOR_STATUSES = frozenset({"1", "2", "3"})
 _DIGITS = re.compile(r"^\d+$")

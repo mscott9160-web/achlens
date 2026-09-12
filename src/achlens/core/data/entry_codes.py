@@ -31,5 +31,6 @@ DEBIT_CODES = frozenset({27, 28, 29, 37, 38, 39, 47, 48, 49, 55})
 PRENOTE_CODES = frozenset({23, 28, 33, 38, 43, 48})
 ZERO_DOLLAR_CODES = frozenset({24, 29, 34, 39, 44, 49, 54})
 
-# The implementation deliberately accepts only the two standard WEB values.
-WEB_PAYMENT_TYPE_CODES = frozenset({"B", "R", "S"})
+# Nacha documents R/S meanings for recurring/single entries and also permits
+# originator-significance values without a standardized interpretation.
+WEB_PAYMENT_TYPE_CODES = frozenset({"R", "S"})

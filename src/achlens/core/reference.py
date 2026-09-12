@@ -58,11 +58,17 @@ _TRANSACTION = {
 _SEC = {
     code: _entry(code, title, "Standard Entry Class code recognized by achlens.")
     for code, title in {
+        "ARC": "Accounts Receivable Entries",
+        "BOC": "Back Office Conversion",
         "PPD": "Prearranged Payment and Deposit",
         "CCD": "Corporate Credit or Debit",
+        "CIE": "Customer Initiated Entries",
         "WEB": "Internet-initiated entry",
         "CTX": "Corporate Trade Exchange",
         "IAT": "International ACH Transaction",
+        "POP": "Point of Purchase",
+        "POS": "Point of Sale",
+        "RCK": "Re-presented Check Entries",
         "TEL": "Telephone-initiated entry",
     }.items()
 }

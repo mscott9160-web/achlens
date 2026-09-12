@@ -96,7 +96,7 @@ def test_each_ed_rule_has_a_triggering_fixture() -> None:
         "ED012": {"trace_number": "123456780000000"},
         "ED013": {"trace_number": "123456780000001"},
         "ED014": {"trace_number": "999999990000001"},
-        "ED015": {"payment_type_code": "X"},
+        "ED015": {"payment_type_code": "!"},
         "ED016": {"transaction_code": "24"},
     }
     second = _record(
