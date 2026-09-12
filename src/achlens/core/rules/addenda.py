@@ -144,7 +144,7 @@ def ad003(context: ValidationContext) -> Iterable[Finding]:
 
 def ad004(context: ValidationContext) -> Iterable[Finding]:
     for batch, entry in _entries(context):
-        if _sec(batch) not in {"PPD", "CCD", "WEB"}:
+        if _sec(batch) not in {"PPD", "CCD", "CTX", "WEB"}:
             continue
         expected = _value(entry.detail, "trace_number")[-7:]
         for addenda in entry.addenda:

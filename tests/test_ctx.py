@@ -17,6 +17,11 @@ def test_ctx_uses_corporate_entry_layout() -> None:
         == "CTX"
     )
     assert parsed.batches[0].entries[0].detail.layout == "entry_detail_ccd"
+    assert len(parsed.batches[0].entries[0].addenda) == 2
+    assert (
+        parsed.batches[0].entries[0].addenda[1].fields["addenda_sequence_number"].raw
+        == "0002"
+    )
     assert validate(content).valid
 
 

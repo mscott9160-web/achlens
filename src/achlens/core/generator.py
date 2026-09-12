@@ -138,17 +138,19 @@ def generate_ach_file(
             else:
                 debit_total += amount
             if include_addenda:
-                lines.append(
-                    build_record(
-                        layouts["addenda_05"],
-                        record_type_code=7,
-                        addenda_type_code=5,
-                        payment_related_information="ACHLENS SYNTHETIC ADDENDA",
-                        addenda_sequence_number=1,
-                        entry_detail_sequence_number=trace[-7:],
+                addenda_count = 2 if sec_code == "CTX" else 1
+                for sequence in range(1, addenda_count + 1):
+                    lines.append(
+                        build_record(
+                            layouts["addenda_05"],
+                            record_type_code=7,
+                            addenda_type_code=5,
+                            payment_related_information="ACHLENS SYNTHETIC ADDENDA",
+                            addenda_sequence_number=sequence,
+                            entry_detail_sequence_number=trace[-7:],
+                        )
                     )
-                )
-                count += 1
+                    count += 1
         lines.append(
             build_record(
                 layouts["batch_control"],
