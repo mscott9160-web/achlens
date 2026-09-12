@@ -38,10 +38,13 @@ Dependency review is part of release approval. Follow
 `pip-audit` exceptions, ownership, and expiry requirements.
 
 Performance verification is a pending release gate for the documented
-100,000-entry target. The official optimized streaming CLI benchmark has one
-Windows Python 3.12 run passing the `<2s` and `<500MB` targets, but repeated
-evidence and cross-platform parity are still required before streaming is
-enabled by default. A release approver must record the verification evidence
-or an explicit decision accepting the remaining performance risk. Historical
-legacy and snapshot-adapter results do not satisfy this gate while those paths
-remain slower than the optimized streaming path.
+100,000-entry target. The latest five official optimized streaming CLI runs on
+Windows Python 3.12, with memory measurement disabled, have a 1.983-second
+median, a 1.916-second minimum, a 2.532-second maximum, and 3/5 runs under
+two seconds. The median is under the target, but variance crosses the
+threshold, so stable repeated evidence and cross-platform parity are still
+required before streaming is enabled by default. A release approver must
+record the verification evidence or an explicit decision accepting the
+remaining performance risk. Historical legacy and snapshot-adapter results do
+not satisfy this gate while those paths remain slower than the optimized
+streaming path.

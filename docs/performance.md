@@ -116,30 +116,19 @@ but its 2.836-second median remains above the `<2s` target.
 
 ## Official Optimized Streaming Benchmark
 
-The official optimized streaming CLI benchmark was measured on 2026-09-12 on
-Windows with Python 3.12 for the 100,000-entry workload. The wall-clock run
-disabled memory measurement:
+The latest five official optimized streaming CLI benchmarks were measured on
+2026-09-12 on Windows with Python 3.12 for the 100,000-entry workload. Memory
+measurement was disabled:
 
 ```text
-entries_requested=100000
-records=100030
-validation_seconds=1.848
+optimized_streaming_cli_runs=1.962,2.532,1.916,1.983,2.004
+median_validation_seconds=1.983
+min_validation_seconds=1.916
+max_validation_seconds=2.532
+passes_under_2_seconds=3/5
 validation_memory_measurement=disabled
-valid=True
-error_count=0
 ```
 
-A separate `tracemalloc` run measured memory:
-
-```text
-entries_requested=100000
-records=100030
-validation_seconds=1.923
-peak_megabytes=53.8
-valid=True
-error_count=0
-```
-
-This single official run passes both the `<2s` and `<500MB` targets. Repeated
-evidence and cross-platform parity are still required before enabling
-streaming by default.
+The median is under the `<2s` target, but the variance crosses the threshold:
+two of five runs were at or above two seconds. Stable repeated evidence and
+cross-platform parity are still required before enabling streaming by default.
