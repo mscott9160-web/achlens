@@ -98,3 +98,18 @@ records=100030
 The combined opt-in streaming path is not yet a performance improvement: its
 median validation time was 0.322 seconds slower than the legacy path. It
 remains opt-in while further optimization and validation work continues.
+
+Post-optimization repeated evidence, measured on 2026-09-12 on Windows with
+Python 3.12 using five paired 100,000-entry runs:
+
+```text
+paired_runs=5
+legacy_median=5.728
+streaming_median=2.836
+median_improvement=50.5%
+validation_reports_matched_exactly=True
+records=100030
+```
+
+Streaming remains opt-in and is now substantially faster than the legacy path,
+but its 2.836-second median remains above the `<2s` target.
