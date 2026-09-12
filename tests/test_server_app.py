@@ -38,3 +38,23 @@ def test_validate_tool_returns_structured_report_and_errors() -> None:
 
     missing_result = asyncio.run(server.call_tool("validate_ach_file", {}))
     assert missing_result.structured_content["error"]["code"] == "INPUT_MISSING"
+
+
+def test_server_registers_resources_and_prompts() -> None:
+    resources = asyncio.run(server.list_resources())
+    assert {str(resource.uri) for resource in resources} == {
+        "ach://layouts",
+        "ach://rules",
+    }
+    prompts = asyncio.run(server.list_prompts())
+    assert {prompt.name for prompt in prompts} == {
+        "debug_ach_file",
+        "explain_returns",
+    }
+
+
+def test_server_reads_layout_resource_and_debug_prompt() -> None:
+    resource = asyncio.run(server.read_resource("ach://layouts"))
+    assert resource[0].mime_type == "application/json"
+    prompt = asyncio.run(server.get_prompt("debug_ach_file"))
+    assert "validate_ach_file" in prompt.messages[0].content.text

@@ -3,6 +3,8 @@
 from mcp.server import MCPServer
 
 from .config import ServerConfig
+from .prompts import debug_ach_file, explain_returns
+from .resources import layouts_resource, reference_resource, rules_resource
 from .tools import (
     check_routing_number,
     explain_control_totals,
@@ -28,6 +30,32 @@ mcp.tool()(parse_ach_file)
 mcp.tool()(explain_control_totals)
 mcp.tool()(check_routing_number)
 mcp.tool()(lookup_ach_code)
+mcp.resource(
+    "ach://layouts",
+    name="layouts",
+    description="The packaged ACH record layouts.",
+    mime_type="application/json",
+)(layouts_resource)
+mcp.resource(
+    "ach://rules",
+    name="rules",
+    description="The packaged ACH validation rule catalog.",
+    mime_type="application/json",
+)(rules_resource)
+mcp.resource(
+    "ach://reference/{kind}",
+    name="reference",
+    description="A packaged ACH reference-code table.",
+    mime_type="application/json",
+)(reference_resource)
+mcp.prompt(
+    name="debug_ach_file",
+    description="Guide deterministic ACH validation and control-total debugging.",
+)(debug_ach_file)
+mcp.prompt(
+    name="explain_returns",
+    description="Guide a concise returns and NOCs explanation.",
+)(explain_returns)
 
 
 def run() -> None:
@@ -40,9 +68,13 @@ __all__ = [
     "explain_control_totals",
     "lookup_ach_code",
     "check_routing_number",
+    "debug_ach_file",
     "parse_ach_file",
+    "reference_resource",
     "run",
     "server_status",
     "summarize_ach_file",
+    "rules_resource",
+    "layouts_resource",
     "validate_ach_file",
 ]

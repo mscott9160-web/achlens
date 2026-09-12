@@ -124,6 +124,14 @@ _CATALOG = {
 }
 
 
+def reference_catalog(kind: str) -> dict[str, dict[str, object]]:
+    """Return all local reference rows for a supported lookup kind."""
+    catalog = _CATALOG.get(kind)
+    if catalog is None:
+        raise ValueError(f"unsupported reference kind: {kind}")
+    return {code: asdict(entry) for code, entry in catalog.items()}
+
+
 def lookup_code(kind: str, code: str) -> dict[str, object]:
     """Return a structured reference entry or close matches."""
     catalog = _CATALOG.get(kind)
@@ -144,4 +152,4 @@ def lookup_code(kind: str, code: str) -> dict[str, object]:
     }
 
 
-__all__ = ["ReferenceEntry", "lookup_code"]
+__all__ = ["ReferenceEntry", "lookup_code", "reference_catalog"]
