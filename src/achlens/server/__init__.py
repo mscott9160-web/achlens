@@ -1,0 +1,1 @@
+"""Thin MCP adapter boundary for achlens."""
