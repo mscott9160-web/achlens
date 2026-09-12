@@ -23,7 +23,6 @@ def main() -> None:
 
     batches = (args.entries + 9_999) // 10_000
     entries_per_batch = (args.entries + batches - 1) // batches
-    tracemalloc.start()
     generation_start = time.perf_counter()
     content = generate_ach_file(
         batches=batches,
@@ -36,6 +35,8 @@ def main() -> None:
     validation_start = time.perf_counter()
     report = validate(content)
     validation_seconds = time.perf_counter() - validation_start
+    tracemalloc.start()
+    validate(content)
     _, peak_bytes = tracemalloc.get_traced_memory()
     tracemalloc.stop()
 
@@ -43,6 +44,7 @@ def main() -> None:
     print(f"records={len(content.splitlines())}")
     print(f"generation_seconds={generation_seconds:.3f}")
     print(f"validation_seconds={validation_seconds:.3f}")
+    print("validation_memory_measurement=tracemalloc")
     print(f"peak_megabytes={peak_bytes / 1_000_000:.1f}")
     print(f"valid={report.valid}")
     print(f"error_count={report.counts['error']}")

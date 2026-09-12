@@ -28,15 +28,17 @@ Python 3.12 environment:
 ```text
 entries_requested=100000
 records=100030
-generation_seconds=11.803
-validation_seconds=23.645
-peak_megabytes=330.7
+generation_seconds=1.469
+validation_seconds=5.745
+validation_memory_measurement=tracemalloc
+peak_megabytes=321.0
 valid=True
 error_count=0
 ```
 
-The memory target is currently within the stated limit, but validation is above
-the two-second target. Profiling identifies parser field construction, the
-printable-ASCII structural scan, and repeated entry-rule field access as the
-main hotspots. This is a known performance gap for the next optimization
-slice; the benchmark remains the acceptance check.
+The memory target is currently within the stated limit, but uninstrumented
+validation is above the two-second target. The earlier `23.645s` figure included
+`tracemalloc` overhead and should not be used as the wall-clock target. Profiling
+identifies parser field construction and repeated entry-rule field access as the
+main remaining hotspots. This is a known performance gap for the next
+optimization slice; the benchmark remains the acceptance check.
