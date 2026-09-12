@@ -7,6 +7,7 @@ from .registry import (
     default_rule_registry,
     load_rule_registry,
 )
+from .structural import Finding, ValidationContext, structural_rule_registry, validate_structure
 
 __all__ = [
     "RuleFunction",
@@ -14,4 +15,8 @@ __all__ = [
     "RuleSpec",
     "default_rule_registry",
     "load_rule_registry",
+    "Finding",
+    "ValidationContext",
+    "structural_rule_registry",
+    "validate_structure",
 ]
