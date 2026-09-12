@@ -85,12 +85,6 @@ def _field(record: object, name: str) -> str:
     return field.raw.strip() if field is not None else ""
 
 
-def _mask_text(value: str) -> str:
-    if len(value) <= 4:
-        return "*" * len(value)
-    return "*" * (len(value) - 4) + value[-4:]
-
-
 def _dollars(cents: int) -> str:
     return f"${cents // 100:,}.{cents % 100:02d}"
 
@@ -101,11 +95,12 @@ def summarize_ach_file(
     reveal_sensitive: bool = False,
 ) -> dict[str, object]:
     """Summarize ACH structure, totals, SEC codes, returns, and NOCs."""
-    del reveal_sensitive
     try:
         config = ServerConfig.from_environment()
         resolved = resolve_input(content=content, path=path, config=config)
-        ach_file = parse(resolved.content)
+        parsed = parse(resolved.content)
+        reveal = reveal_sensitive and config.allow_reveal
+        ach_file = mask_ach(parsed, reveal=reveal)
         debit, credit = file_totals(ach_file)
         batches: list[dict[str, object]] = []
         sec_codes: set[str] = set()
@@ -158,13 +153,18 @@ def summarize_ach_file(
                             }
                         )
                     elif addenda_type == "98":
-                        corrected = _field(addenda, "corrected_data")
+                        corrected_field = addenda.fields.get("corrected_data")
+                        corrected = (
+                            str(corrected_field.value).strip()
+                            if corrected_field is not None
+                            else ""
+                        )
                         nocs.append(
                             {
                                 "trace_number": trace,
                                 "change_code": _field(addenda, "change_code"),
                                 "title": "Unverified NOC code",
-                                "corrected_data_masked": _mask_text(corrected),
+                                "corrected_data_masked": corrected,
                             }
                         )
         return {
@@ -191,7 +191,7 @@ def summarize_ach_file(
             "batches": batches,
             "returns": returns,
             "nocs": nocs,
-            "masked": True,
+            "masked": not reveal,
             "path_mode": resolved.path is not None,
         }
     except InputResolutionError as error:
@@ -465,7 +465,12 @@ def generate_test_ach_file(
     effective_date: str | None = None,
     inject_errors: list[str] | None = None,
 ) -> dict[str, object]:
-    """Generate a balanced synthetic ACH file for testing, never transmission."""
+    """Generate synthetic raw ACH content for testing, never transmission.
+
+    The fixed-width content is intentionally returned unmasked so it remains
+    structurally valid. Keep it in raw-content handling paths rather than
+    logging or serializing it through structured summaries.
+    """
     try:
         content = generate_ach_file(
             sec_code=sec_code,
@@ -512,7 +517,11 @@ def repair_control_records_tool(
     path: str | None = None,
     restore_trailing_spaces: bool = True,
 ) -> dict[str, object]:
-    """Repair derived controls, returning content only in content mode."""
+    """Repair derived controls, returning synthetic raw content in content mode.
+
+    Raw fixed-width output is intentionally unmasked so it remains valid ACH
+    text. Keep it in raw-content handling paths rather than structured output.
+    """
     try:
         config = ServerConfig.from_environment()
         resolved = resolve_input(content=content, path=path, config=config)
@@ -529,7 +538,7 @@ def repair_control_records_tool(
         changes = [asdict(change) for change in result.changes]
         if resolved.path is None:
             return {
-                "repaired_content": result.repaired_content,
+                "repaired_content": result.repaired_content or "",
                 "changes": changes,
                 "valid": result.valid,
                 "path_mode": False,

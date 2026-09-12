@@ -42,6 +42,11 @@ Sensitive fields are masked by default. Configure `ACHLENS_ALLOWED_ROOTS` to
 enable MCP path inputs; otherwise provide file content directly. See
 [SECURITY.md](SECURITY.md) for the data and write boundaries.
 
+Synthetic generator output and repaired content are raw fixed-width ACH paths,
+so they remain structurally valid and are marked synthetic where applicable.
+Do not log or serialize these raw strings through structured summaries; use the
+masked parsed, summarized, and diff outputs for reporting.
+
 ## Development
 
 This project uses [uv](https://docs.astral.sh/uv/).

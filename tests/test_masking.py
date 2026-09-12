@@ -95,7 +95,7 @@ def test_short_values_are_fully_masked_and_non_sensitive_values_preserved() -> N
 
     assert masked.fields["dfi_account_number"].value == "***"
     assert masked.fields["amount"].value == 1250
-    assert masked.fields["trace_number"].value == 123456789
+    assert masked.fields["trace_number"].value == "*****6789"
     assert masked.fields["individual_name"].value == "Jane Doe"
 
 

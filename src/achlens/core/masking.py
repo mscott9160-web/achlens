@@ -9,11 +9,17 @@ _SENSITIVE_FIELDS = frozenset(
         "dfi_account_number",
         "individual_identification_number",
         "corrected_data",
+        "trace_number",
+        "original_entry_trace_number",
+        "original_receiving_dfi_identification",
+        "originating_dfi_identification",
     }
 )
 
 
 def _masked_value(value: object) -> object:
+    if isinstance(value, int):
+        value = str(value)
     if not isinstance(value, str) or not value:
         return value
     if len(value) <= 4:
