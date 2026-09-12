@@ -1,6 +1,7 @@
 """Core ACH layout and parsing foundations."""
 
 from .builder import build_record
+from .diff import RecordDifference, diff_ach_files
 from .generator import generate_ach_file
 from .layouts import FieldSpec, RecordLayout, default_layouts, load_layouts
 from .lines import LineEnding, LineRecord, RecordLength, SplitLines, split_lines
@@ -42,4 +43,6 @@ __all__ = [
     "RepairChange",
     "RepairResult",
     "repair_control_records",
+    "RecordDifference",
+    "diff_ach_files",
 ]

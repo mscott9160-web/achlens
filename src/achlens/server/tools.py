@@ -15,6 +15,7 @@ from achlens.core.calculators import (
     valid_routing_number,
 )
 from achlens.core.data.entry_codes import PRENOTE_CODES
+from achlens.core.diff import diff_ach_files
 from achlens.core.generator import generate_ach_file
 from achlens.core.masking import mask as mask_ach
 from achlens.core.model import AchFile, Record
@@ -565,11 +566,42 @@ def repair_control_records_tool(
         )
 
 
+def diff_ach_files_tool(
+    left_content: str | None = None,
+    right_content: str | None = None,
+    reveal_sensitive: bool = False,
+) -> dict[str, object]:
+    """Compare two ACH contents and return masked field-level differences."""
+    if left_content is None or right_content is None:
+        return _error(
+            "INPUT_MISSING",
+            "Provide both left_content and right_content.",
+            "Supply two ACH file contents for comparison.",
+        )
+    try:
+        config = ServerConfig.from_environment()
+        reveal = reveal_sensitive and config.allow_reveal
+        return diff_ach_files(left_content, right_content, reveal_sensitive=reveal)
+    except ValueError:
+        return _error(
+            "NOT_ACH",
+            "One or both inputs could not be parsed as ACH text.",
+            "Provide recognizable ACH records.",
+        )
+    except Exception:
+        return _error(
+            "INTERNAL",
+            "The ACH diff request could not be completed.",
+            "Retry with valid ACH content.",
+        )
+
+
 __all__ = [
     "check_routing_number",
     "explain_control_totals",
     "generate_test_ach_file",
     "repair_control_records_tool",
+    "diff_ach_files_tool",
     "lookup_ach_code",
     "parse_ach_file",
     "summarize_ach_file",
