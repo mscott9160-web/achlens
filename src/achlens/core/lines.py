@@ -1,6 +1,6 @@
 """Split ACH text into records without interpreting record fields."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import StrEnum
 
 
@@ -21,7 +21,7 @@ class RecordLength(StrEnum):
     OVERLONG = "overlong"
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, init=False)
 class LineRecord:
     """One input record, retaining its source text and terminator.
 
@@ -35,11 +35,41 @@ class LineRecord:
     ending: str
     length: RecordLength
     potential_trailing_space_loss: bool
+    _content: str = field(repr=False, compare=False)
+
+    def __init__(
+        self,
+        line_number: int,
+        raw: str,
+        ending: str,
+        length: RecordLength,
+        potential_trailing_space_loss: bool,
+        *,
+        _content: str | None = None,
+    ) -> None:
+        object.__setattr__(self, "line_number", line_number)
+        object.__setattr__(self, "raw", raw)
+        object.__setattr__(self, "ending", ending)
+        object.__setattr__(self, "length", length)
+        object.__setattr__(
+            self, "potential_trailing_space_loss", potential_trailing_space_loss
+        )
+        object.__setattr__(
+            self,
+            "_content",
+            (
+                _content
+                if _content is not None
+                else raw[: -len(ending)]
+                if ending
+                else raw
+            ),
+        )
 
     @property
     def content(self) -> str:
         """Return the record without its line terminator."""
-        return self.raw[: -len(self.ending)] if self.ending else self.raw
+        return self._content
 
 
 @dataclass(frozen=True)
@@ -98,7 +128,14 @@ def split_lines(text: str) -> SplitLines:
             length = RecordLength.EXACT
             potential_trailing_space_loss = False
         records.append(
-            LineRecord(line_number, raw, ending, length, potential_trailing_space_loss)
+            LineRecord(
+                line_number,
+                raw,
+                ending,
+                length,
+                potential_trailing_space_loss,
+                _content=content,
+            )
         )
         line_number += 1
 

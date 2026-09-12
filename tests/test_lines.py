@@ -2,7 +2,7 @@
 
 import pytest
 
-from achlens.core.lines import LineEnding, RecordLength, split_lines
+from achlens.core.lines import LineEnding, LineRecord, RecordLength, split_lines
 
 
 def test_lf_preserves_raw_records_and_numbers() -> None:
@@ -66,3 +66,30 @@ def test_short_record_preserves_meaningful_trailing_spaces_and_ending(
 def test_lone_carriage_return_is_rejected() -> None:
     with pytest.raises(ValueError, match="LF or CRLF"):
         split_lines("A\rB")
+
+
+@pytest.mark.parametrize(
+    ("text", "expected_contents", "expected_endings"),
+    [
+        ("A\nB\n", ["A", "B"], ["\n", "\n"]),
+        ("A\r\nB\r\n", ["A", "B"], ["\r\n", "\r\n"]),
+        ("A\nB\r\nC", ["A", "B", "C"], ["\n", "\r\n", ""]),
+        ("A" * 94 + "\n" + "B" * 95, ["A" * 94, "B" * 95], ["\n", ""]),
+    ],
+)
+def test_split_records_cache_content_without_changing_line_metadata(
+    text: str, expected_contents: list[str], expected_endings: list[str]
+) -> None:
+    records = split_lines(text).records
+
+    assert [record.content for record in records] == expected_contents
+    assert [record.ending for record in records] == expected_endings
+    assert [record.raw for record in records] == [
+        content + ending for content, ending in zip(expected_contents, expected_endings)
+    ]
+
+
+def test_direct_line_record_construction_derives_content() -> None:
+    record = LineRecord(1, "ABC\r\n", "\r\n", RecordLength.SHORT, True)
+
+    assert record.content == "ABC"
