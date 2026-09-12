@@ -77,7 +77,7 @@ def parse(text: str, layouts: Mapping[str, RecordLayout] | None = None) -> AchFi
         if code == "1" and result.header is None:
             record = _layout_record(line, layouts, "file_header", "1")
             result.header = record
-        elif code == "5" and current_batch is None:
+        elif code == "5" and (current_batch is None or current_batch.control is not None):
             record = _layout_record(line, layouts, "batch_header", "5")
             current_batch = Batch(header=record)
             result.batches.append(current_batch)

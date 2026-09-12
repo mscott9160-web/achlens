@@ -8,6 +8,7 @@ from .registry import (
     load_rule_registry,
 )
 from .structural import Finding, ValidationContext, structural_rule_registry, validate_structure
+from .headers import header_rule_registry, validate_headers
 
 __all__ = [
     "RuleFunction",
@@ -19,4 +20,6 @@ __all__ = [
     "ValidationContext",
     "structural_rule_registry",
     "validate_structure",
+    "header_rule_registry",
+    "validate_headers",
 ]

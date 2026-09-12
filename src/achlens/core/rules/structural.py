@@ -40,11 +40,13 @@ Rule = Callable[[ValidationContext], Iterable[Finding]]
 
 def _finding(rule_id: str, context: ValidationContext, message: str, *,
              line: LineRecord | Record | None = None,
-             position: int | None = None) -> Finding:
-    spec = structural_rule_registry.specs[rule_id]
+             position: int | None = None,
+             registry: RuleRegistry | None = None,
+             severity: str | None = None) -> Finding:
+    spec = (registry or structural_rule_registry).specs[rule_id]
     return Finding(
         rule_id=rule_id,
-        severity=spec.severity,
+        severity=severity or spec.severity,
         message=message,
         fix_hint=spec.fix_hint or None,
         line_number=getattr(line, "line_number", None),
@@ -186,6 +188,7 @@ def structural_rule_registry() -> RuleRegistry:
     registry = RuleRegistry(specs)
     for rule_id, function in _RULES.items():
         registry.register(rule_id, function)
+    registry.parity_check()
     return registry
 
 
