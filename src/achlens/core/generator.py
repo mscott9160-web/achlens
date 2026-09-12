@@ -31,6 +31,7 @@ def _layout_for_sec(sec_code: str) -> str:
         "PPD": "entry_detail_ppd",
         "CCD": "entry_detail_ccd",
         "CTX": "entry_detail_ccd",
+        "TEL": "entry_detail_web",
         "WEB": "entry_detail_web",
     }[sec_code]
 
@@ -49,8 +50,8 @@ def generate_ach_file(
 ) -> str:
     """Generate a balanced synthetic ACH file for local testing only."""
     sec_code = sec_code.upper()
-    if sec_code not in {"PPD", "CCD", "CTX", "WEB"}:
-        raise ValueError("sec_code must be PPD, CCD, CTX, or WEB")
+    if sec_code not in {"PPD", "CCD", "CTX", "TEL", "WEB"}:
+        raise ValueError("sec_code must be PPD, CCD, CTX, TEL, or WEB")
     if not 1 <= batches <= 50:
         raise ValueError("batches must be between 1 and 50")
     if not 1 <= entries_per_batch <= 10_000:
@@ -123,12 +124,12 @@ def generate_ach_file(
                 "dfi_account_number": f"TEST{batch_number:02d}{entry_number:05d}",
                 "amount": amount,
                 "individual_name": _NAMES[(entry_number - 1) % len(_NAMES)],
-                "addenda_record_indicator": int(include_addenda),
+                "addenda_record_indicator": int(include_addenda and sec_code != "TEL"),
                 "trace_number": trace,
             }
             if sec_code in {"CCD", "CTX"}:
                 fields["receiving_company_name"] = fields.pop("individual_name")
-            if sec_code == "WEB":
+            if sec_code in {"TEL", "WEB"}:
                 fields["payment_type_code"] = "S"
             lines.append(build_record(layouts[layout_name], **fields))
             entry_hash += int(prefix)
@@ -137,7 +138,7 @@ def generate_ach_file(
                 credit_total += amount
             else:
                 debit_total += amount
-            if include_addenda:
+            if include_addenda and sec_code != "TEL":
                 addenda_count = 2 if sec_code == "CTX" else 1
                 for sequence in range(1, addenda_count + 1):
                     lines.append(

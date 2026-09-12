@@ -299,6 +299,7 @@ def build_validation_snapshot(text: str) -> ValidationSnapshot:
                 "PPD": "entry_detail_ppd",
                 "CCD": "entry_detail_ccd",
                 "CTX": "entry_detail_ccd",
+                "TEL": "entry_detail_web",
                 "WEB": "entry_detail_web",
             }.get(_raw(current_header, "standard_entry_class_code"))
         elif (

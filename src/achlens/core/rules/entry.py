@@ -285,11 +285,19 @@ def ed014(context: ValidationContext) -> Iterable[Finding]:
 
 
 def ed015(context: ValidationContext) -> Iterable[Finding]:
-    for _, entry in _entries(context):
+    for batch, entry in _entries(context):
+        sec = (
+            _value(batch.header, "standard_entry_class_code").strip()
+            if batch.header
+            else ""
+        )
         if (
             entry.detail.layout == "entry_detail_web"
             and _value(entry.detail, "payment_type_code").strip()
             not in WEB_PAYMENT_TYPE_CODES
+            and not (
+                sec == "TEL" and not _value(entry.detail, "payment_type_code").strip()
+            )
         ):
             yield _emit(
                 "ED015",
@@ -551,6 +559,9 @@ def _validate_entries_fast(context: ValidationContext) -> list[Finding]:
                 record.layout == "entry_detail_web"
                 and _value(record, "payment_type_code").strip()
                 not in WEB_PAYMENT_TYPE_CODES
+                and not (
+                    sec == "TEL" and not _value(record, "payment_type_code").strip()
+                )
             ):
                 findings_by_rule["ED015"].append(
                     _emit(
