@@ -2,6 +2,7 @@
 
 import json
 import socket
+from dataclasses import asdict
 
 from achlens.core import build_record, mask, parse
 from achlens.core.layouts import default_layouts
@@ -64,7 +65,7 @@ def _sensitive_file() -> str:
 def test_masking_removes_sensitive_values_from_serialized_output() -> None:
     original_values = ("ACCTSECRET1234567", "IDSECRET-5678")
     masked = mask(parse(_sensitive_file()))
-    serialized = json.dumps(masked, default=lambda value: value.__dict__)
+    serialized = json.dumps(asdict(masked))
     for value in original_values:
         assert value not in serialized
     assert "4567" in serialized
