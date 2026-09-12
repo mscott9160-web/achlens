@@ -136,3 +136,13 @@ def test_generate_test_file_returns_seeded_synthetic_content() -> None:
 def test_generate_test_file_returns_structured_limit_error() -> None:
     result = generate_test_ach_file(entries_per_batch=10_001)
     assert result["error"]["code"] == "UNSUPPORTED"
+
+
+def test_generate_test_file_propagates_error_injections() -> None:
+    result = generate_test_ach_file(
+        entries_per_batch=2,
+        seed=7,
+        effective_date="260911",
+        inject_errors=["BC002"],
+    )
+    assert result["injected"] == ["BC002"]

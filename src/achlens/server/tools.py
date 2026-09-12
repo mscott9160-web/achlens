@@ -460,6 +460,7 @@ def generate_test_ach_file(
     include_addenda: bool = False,
     seed: int | None = None,
     effective_date: str | None = None,
+    inject_errors: list[str] | None = None,
 ) -> dict[str, object]:
     """Generate a balanced synthetic ACH file for testing, never transmission."""
     try:
@@ -472,6 +473,7 @@ def generate_test_ach_file(
             include_addenda=include_addenda,
             seed=seed,
             effective_date=effective_date,
+            inject_errors=inject_errors,
         )
         parsed = parse(content)
         debit, credit = file_totals(parsed)
@@ -484,7 +486,7 @@ def generate_test_ach_file(
                 "credit_cents": credit,
                 "synthetic_only": True,
             },
-            "injected": [],
+            "injected": inject_errors or [],
             "seed": seed,
         }
     except ValueError as error:
