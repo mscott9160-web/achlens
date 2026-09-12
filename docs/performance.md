@@ -113,3 +113,33 @@ records=100030
 
 Streaming remains opt-in and is now substantially faster than the legacy path,
 but its 2.836-second median remains above the `<2s` target.
+
+## Official Optimized Streaming Benchmark
+
+The official optimized streaming CLI benchmark was measured on 2026-09-12 on
+Windows with Python 3.12 for the 100,000-entry workload. The wall-clock run
+disabled memory measurement:
+
+```text
+entries_requested=100000
+records=100030
+validation_seconds=1.848
+validation_memory_measurement=disabled
+valid=True
+error_count=0
+```
+
+A separate `tracemalloc` run measured memory:
+
+```text
+entries_requested=100000
+records=100030
+validation_seconds=1.923
+peak_megabytes=53.8
+valid=True
+error_count=0
+```
+
+This single official run passes both the `<2s` and `<500MB` targets. Repeated
+evidence and cross-platform parity are still required before enabling
+streaming by default.

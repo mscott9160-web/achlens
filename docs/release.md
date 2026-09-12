@@ -37,8 +37,11 @@ Dependency review is part of release approval. Follow
 [Dependency Governance](dependency-governance.md) for lockfile checks,
 `pip-audit` exceptions, ownership, and expiry requirements.
 
-Performance approval is also required for the documented 100,000-entry target.
-The current measured result remains above two seconds, so a release approver
-must either provide evidence that the target has been met or record an explicit
-decision accepting the revised performance risk. Snapshot-adapter results do
-not satisfy this gate while that path remains slower than full validation.
+Performance verification is a pending release gate for the documented
+100,000-entry target. The official optimized streaming CLI benchmark has one
+Windows Python 3.12 run passing the `<2s` and `<500MB` targets, but repeated
+evidence and cross-platform parity are still required before streaming is
+enabled by default. A release approver must record the verification evidence
+or an explicit decision accepting the remaining performance risk. Historical
+legacy and snapshot-adapter results do not satisfy this gate while those paths
+remain slower than the optimized streaming path.
