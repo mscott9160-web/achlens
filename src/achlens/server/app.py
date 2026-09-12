@@ -18,7 +18,7 @@ from .tools import (
 )
 
 _config = ServerConfig.from_environment()
-mcp = MCPServer("achlens", version="0.1.1", log_level=_config.log_level)
+mcp = MCPServer("achlens", version="0.1.2", log_level=_config.log_level)
 
 
 @mcp.tool()

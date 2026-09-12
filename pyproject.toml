@@ -1,6 +1,6 @@
 [project]
 name = "achlens"
-version = "0.1.1"
+version = "0.1.2"
 description = "A local-first ACH file validation foundation."
 readme = "README.md"
 requires-python = ">=3.11,<3.14"
