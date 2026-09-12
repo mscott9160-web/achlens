@@ -20,6 +20,14 @@ uv run achlens validate tests/fixtures/golden/sample_valid.ach
 uv run achlens generate --sec PPD --entries 5 --seed 7 > synthetic.ach
 ```
 
+In Windows PowerShell, use an explicit ASCII encoding because PowerShell's
+default `>` redirection can write UTF-16 output that is not valid ACH text:
+
+```powershell
+uvx achlens generate --sec PPD --entries 5 --seed 7 |
+	Set-Content -Encoding ascii synthetic.ach
+```
+
 Run the MCP server over stdio:
 
 ```text
