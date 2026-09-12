@@ -10,6 +10,7 @@ from .registry import (
 from .structural import Finding, ValidationContext, structural_rule_registry, validate_structure
 from .headers import header_rule_registry, validate_headers
 from .entry import entry_rule_registry, validate_entries
+from .addenda import addenda_rule_registry, validate_addenda
 
 __all__ = [
     "RuleFunction",
@@ -25,4 +26,6 @@ __all__ = [
     "validate_headers",
     "entry_rule_registry",
     "validate_entries",
+    "addenda_rule_registry",
+    "validate_addenda",
 ]
