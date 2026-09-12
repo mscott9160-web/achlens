@@ -1,5 +1,6 @@
 """Focused CORE-14 validator orchestration tests."""
 
+import achlens.core.validator as validator_module
 from achlens.core.rules.structural import Finding, ValidationContext
 from achlens.core.validator import validate
 
@@ -75,6 +76,44 @@ def test_rule_filter_limits_reported_and_counted_rules() -> None:
     assert report.valid
     assert report.counts == {"error": 0, "warning": 1, "info": 0}
     assert list(report.counts_by_rule) == ["KEEP"]
+
+
+def test_builtin_runners_use_streaming_by_default(monkeypatch) -> None:
+    monkeypatch.delenv("ACHLENS_DISABLE_STREAMING_VALIDATION", raising=False)
+    called = False
+    original = validator_module.validate_structure_streaming
+
+    def observe(split):
+        nonlocal called
+        called = True
+        return original(split)
+
+    monkeypatch.setattr(validator_module, "validate_structure_streaming", observe)
+
+    validate("", runners=validator_module.DEFAULT_RULE_RUNNERS)
+
+    assert called
+
+
+def test_streaming_rollback_uses_legacy_runners(monkeypatch) -> None:
+    monkeypatch.setenv("ACHLENS_DISABLE_STREAMING_VALIDATION", "1")
+    called = False
+    original = validator_module.DEFAULT_RULE_RUNNERS[0]
+
+    def observe(context):
+        nonlocal called
+        called = True
+        return original(context)
+
+    monkeypatch.setattr(
+        validator_module,
+        "DEFAULT_RULE_RUNNERS",
+        (observe, *validator_module.DEFAULT_RULE_RUNNERS[1:]),
+    )
+
+    validate("", runners=validator_module.DEFAULT_RULE_RUNNERS)
+
+    assert called
 
 
 def test_invalid_validator_options_are_rejected() -> None:

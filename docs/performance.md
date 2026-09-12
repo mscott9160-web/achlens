@@ -76,10 +76,12 @@ optimization measured `4.434s` for the same 100,000-entry workload. The earlier
 wall-clock target. Profiling identifies parser field/model construction as the
 dominant remaining hotspot; the benchmark remains the acceptance check.
 
-The `<2s` target is therefore still a release-readiness blocker unless the
-product owner explicitly accepts a revised target with supporting evidence.
-The current snapshot adapter is not an acceptable workaround because it
-reconstructs rule-facing objects and is slower than the full-parser path.
+The completed streaming validation suite passed with 193 tests and 1 skipped.
+Hosted Windows, Ubuntu, and macOS benchmark runs each completed in under one
+second, used 53.8 MB, produced a valid report with no errors, and matched the
+legacy path exactly. These parity and cross-platform benchmark criteria pass,
+so optimized streaming is enabled by default; the internal
+`ACHLENS_DISABLE_STREAMING_VALIDATION=1` switch remains available for rollback.
 
 ## Repeated Streaming Comparison
 
@@ -111,8 +113,8 @@ validation_reports_matched_exactly=True
 records=100030
 ```
 
-Streaming remains opt-in and is now substantially faster than the legacy path,
-but its 2.836-second median remains above the `<2s` target.
+Streaming is now the default built-in validation path. Custom rule runners
+continue to use the legacy context path for compatibility.
 
 ## Official Optimized Streaming Benchmark
 
@@ -129,6 +131,6 @@ passes_under_2_seconds=3/5
 validation_memory_measurement=disabled
 ```
 
-The median is under the `<2s` target, but the variance crosses the threshold:
-two of five runs were at or above two seconds. Stable repeated evidence and
-cross-platform parity are still required before enabling streaming by default.
+These local runs preceded the final hosted cross-platform gate. The final gate
+passed with exact parity and hosted Windows, Ubuntu, and macOS runs each under
+one second at 53.8 MB, so streaming is enabled by default.

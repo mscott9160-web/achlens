@@ -55,8 +55,8 @@ _SEVERITY_RANK = {"error": 0, "warning": 1, "info": 2}
 
 
 def _streaming_enabled() -> bool:
-    """Return the internal opt-in switch; this is intentionally not public API."""
-    return os.environ.get("ACHLENS_INTERNAL_STREAMING_VALIDATION") == "1"
+    """Return whether the optimized internal validator path is enabled."""
+    return os.environ.get("ACHLENS_DISABLE_STREAMING_VALIDATION") != "1"
 
 
 def _streaming_context(content: str) -> tuple[ValidationContext, StreamFacts]:
