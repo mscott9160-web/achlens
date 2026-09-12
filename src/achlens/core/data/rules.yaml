@@ -1,0 +1,339 @@
+# achlens rule catalog. Descriptions are original paraphrases; sources remain unverified.
+- &defaults
+  template: true
+  category: S
+  severity: error
+  title: ACH structure rule
+  description: achlens convention for ACH structure validation.
+  fix_hint: Review the affected record and preserve the fixed-width ACH format.
+  applies_to: [all]
+  source: achlens convention
+  status: UNVERIFIED
+
+- id: S001
+  <<: *defaults
+  title: Record length is 94 characters
+  description: Every record line must contain exactly 94 characters.
+  fix_hint: Editors may strip trailing spaces when lines are short; restore missing characters when they are blank.
+- id: S002
+  <<: *defaults
+  title: Printable record characters
+  description: Records contain only printable ASCII characters from 0x20 through 0x7E.
+- id: S003
+  <<: *defaults
+  title: Known record type
+  description: The first character identifies a known ACH record type.
+- id: S004
+  <<: *defaults
+  title: File begins with header
+  description: The first record is a file header record.
+- id: S005
+  <<: *defaults
+  title: Exactly one file header
+  description: The file contains exactly one file header.
+- id: S006
+  <<: *defaults
+  title: Record order is valid
+  description: Entry, addenda, batch control, and batch header records occur in valid order.
+- id: S007
+  <<: *defaults
+  title: Batches contain entries
+  description: Every batch contains at least one entry detail record.
+- id: S008
+  <<: *defaults
+  title: File control is present
+  description: The file contains a file control record.
+- id: S009
+  <<: *defaults
+  title: Only padding follows file control
+  description: No non-padding record follows the file control record.
+- id: S010
+  <<: *defaults
+  title: Padding records are valid
+  description: Each padding record consists of exactly 94 nines.
+- id: S011
+  <<: *defaults
+  title: Line count is blocked
+  description: Total record count is a multiple of ten.
+- id: S012
+  <<: *defaults
+  title: Padding is necessary
+  description: Padding is no more than nine lines and reaches the next block boundary.
+- id: S013
+  <<: *defaults
+  severity: warning
+  title: Line endings are consistent
+  description: Records use a consistent line ending convention.
+- id: S014
+  <<: *defaults
+  title: File is not empty
+  description: The ACH file contains at least one record.
+
+- &fh
+  template: true
+  category: FH
+  severity: warning
+  title: File header rule
+  description: achlens convention for file header validation.
+  fix_hint: Review the file header field and correct its fixed-width value.
+  applies_to: ["1"]
+  source: achlens convention
+  status: UNVERIFIED
+- id: FH001
+  <<: *fh
+  title: Priority code is 01
+- id: FH002
+  <<: *fh
+  title: Immediate destination has expected format
+- id: FH003
+  <<: *fh
+  severity: error
+  title: Immediate destination check digit is valid
+- id: FH004
+  <<: *fh
+  severity: info
+  title: Immediate origin has expected format
+- id: FH005
+  <<: *fh
+  severity: error
+  title: File creation date is valid
+- id: FH006
+  <<: *fh
+  severity: error
+  title: File creation time is valid when present
+- id: FH007
+  <<: *fh
+  severity: error
+  title: File ID modifier is valid
+- id: FH008
+  <<: *fh
+  severity: error
+  title: Record size is 094
+- id: FH009
+  <<: *fh
+  severity: error
+  title: Blocking factor is 10
+- id: FH010
+  <<: *fh
+  severity: error
+  title: Format code is 1
+
+- &bh
+  template: true
+  category: BH
+  severity: error
+  title: Batch header rule
+  description: achlens convention for batch header validation.
+  fix_hint: Review the batch header field and correct its fixed-width value.
+  applies_to: ["5"]
+  source: achlens convention
+  status: UNVERIFIED
+- id: BH001
+  <<: *bh
+  title: Service class code is supported
+- id: BH002
+  <<: *bh
+  title: Company name is present
+- id: BH003
+  <<: *bh
+  title: Company identification is present
+- id: BH004
+  <<: *bh
+  title: SEC code is recognized
+- id: BH005
+  <<: *bh
+  title: Company entry description is present
+- id: BH006
+  <<: *bh
+  title: Effective entry date is valid
+- id: BH007
+  <<: *bh
+  severity: warning
+  title: Effective entry date is not a weekend
+- id: BH008
+  <<: *bh
+  severity: warning
+  title: Settlement date is blank in origination input
+- id: BH009
+  <<: *bh
+  severity: warning
+  title: Originator status code is known
+- id: BH010
+  <<: *bh
+  title: ODFI identification is numeric
+- id: BH011
+  <<: *bh
+  title: Batch numbers ascend
+
+- &ed
+  template: true
+  category: ED
+  severity: error
+  title: Entry detail rule
+  description: achlens convention for entry detail validation.
+  fix_hint: Review the entry detail field and correct its fixed-width value.
+  applies_to: ["6"]
+  source: achlens convention
+  status: UNVERIFIED
+- id: ED001
+  <<: *ed
+  title: Transaction code is valid
+- id: ED002
+  <<: *ed
+  title: Transaction code agrees with service class
+- id: ED003
+  <<: *ed
+  title: Receiving DFI identification is numeric
+- id: ED004
+  <<: *ed
+  title: Routing check digit matches
+- id: ED005
+  <<: *ed
+  title: Account number is present
+- id: ED006
+  <<: *ed
+  title: Amount is numeric
+- id: ED007
+  <<: *ed
+  title: Prenote amount is zero
+- id: ED008
+  <<: *ed
+  severity: warning
+  title: Live entry amount is nonzero
+- id: ED009
+  <<: *ed
+  severity: warning
+  title: Individual or receiving company name is present
+- id: ED010
+  <<: *ed
+  title: Addenda indicator agrees with addenda
+- id: ED011
+  <<: *ed
+  title: Trace number has 15 digits
+- id: ED012
+  <<: *ed
+  title: Trace numbers ascend in batch
+- id: ED013
+  <<: *ed
+  title: Trace numbers are unique
+- id: ED014
+  <<: *ed
+  severity: warning
+  title: Trace prefix matches batch ODFI
+- id: ED015
+  <<: *ed
+  severity: warning
+  title: WEB payment type code is allowed
+- id: ED016
+  <<: *ed
+  severity: warning
+  title: Zero-dollar remittance is appropriately scoped
+
+- &ad
+  template: true
+  category: AD
+  severity: error
+  title: Addenda rule
+  description: achlens convention for addenda validation.
+  fix_hint: Review the addenda record and its parent entry.
+  applies_to: ["7"]
+  source: achlens convention
+  status: UNVERIFIED
+- id: AD001
+  <<: *ad
+  title: Addenda type is valid for context
+- id: AD002
+  <<: *ad
+  title: Single-addenda entry has at most one addenda
+- id: AD003
+  <<: *ad
+  title: Addenda sequence is 0001
+- id: AD004
+  <<: *ad
+  title: Addenda entry sequence matches parent trace
+- id: AD005
+  <<: *ad
+  severity: warning
+  title: Return reason code is known
+- id: AD006
+  <<: *ad
+  title: Original return trace has 15 digits
+- id: AD007
+  <<: *ad
+  severity: warning
+  title: NOC change code is known
+- id: AD008
+  <<: *ad
+  title: NOC corrected data is present
+
+- &bc
+  template: true
+  category: BC
+  severity: error
+  title: Batch control rule
+  description: achlens convention for batch control validation.
+  fix_hint: Recalculate the batch control field from the parsed batch.
+  applies_to: ["8"]
+  source: achlens convention
+  status: UNVERIFIED
+- id: BC001
+  <<: *bc
+  title: Batch service class matches header
+- id: BC002
+  <<: *bc
+  title: Entry and addenda count matches
+- id: BC003
+  <<: *bc
+  title: Entry hash matches
+- id: BC004
+  <<: *bc
+  title: Total debit matches
+- id: BC005
+  <<: *bc
+  title: Total credit matches
+- id: BC006
+  <<: *bc
+  title: Company identification matches
+- id: BC007
+  <<: *bc
+  title: ODFI identification matches
+- id: BC008
+  <<: *bc
+  title: Batch number matches
+- id: BC009
+  <<: *bc
+  severity: warning
+  title: Authentication and reserved fields are blank
+
+- &fc
+  template: true
+  category: FC
+  severity: error
+  title: File control rule
+  description: achlens convention for file control validation.
+  fix_hint: Recalculate the file control field from the parsed file.
+  applies_to: ["9"]
+  source: achlens convention
+  status: UNVERIFIED
+- id: FC001
+  <<: *fc
+  title: Batch count matches
+- id: FC002
+  <<: *fc
+  title: Block count matches
+- id: FC003
+  <<: *fc
+  title: Entry and addenda count matches
+- id: FC004
+  <<: *fc
+  title: Entry hash matches
+- id: FC005
+  <<: *fc
+  title: Total debit matches
+- id: FC006
+  <<: *fc
+  title: Total credit matches
+- id: FC007
+  <<: *fc
+  severity: warning
+  title: Reserved file control field is blank
