@@ -25,6 +25,23 @@ def test_streaming_flag_is_opt_in_and_default_matches_legacy(monkeypatch) -> Non
     assert default_report == streaming_report
 
 
+def test_streaming_matches_header_mutations(monkeypatch) -> None:
+    content = valid_file()
+    mutations = (
+        set_field(content, 1, "file_header", "priority_code", 2),
+        set_field(content, 2, "batch_header", "service_class_code", 999),
+        set_field(content, 2, "batch_header", "effective_entry_date", 260231),
+    )
+
+    for mutated in (content, *mutations):
+        legacy = _validate(mutated, monkeypatch, False)
+        streaming = _validate(mutated, monkeypatch, True)
+        assert streaming == legacy
+        assert [finding.rule_id for finding in streaming.findings] == [
+            finding.rule_id for finding in legacy.findings
+        ]
+
+
 def test_streaming_matches_mutated_and_malformed_fixtures(monkeypatch) -> None:
     mutations = (
         set_field(valid_file(), 3, "entry_detail_ppd", "amount", 999),

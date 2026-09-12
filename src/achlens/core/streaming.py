@@ -7,8 +7,12 @@ the rule-facing streaming adapter has parity coverage.
 
 from dataclasses import dataclass
 
+from .layouts import default_layouts
 from .lines import SplitLines, split_lines
-from .rules.structural import Finding, structural_rule_registry
+from .model import AchFile, Batch
+from .parser import _layout_record
+from .rules.headers import validate_headers
+from .rules.structural import Finding, ValidationContext, structural_rule_registry
 
 
 @dataclass(frozen=True)
@@ -182,3 +186,27 @@ def validate_structure_streaming(split: SplitLines) -> list[Finding]:
     if not records:
         add("S014", "ACH file must contain at least one record.")
     return findings
+
+
+def validate_headers_streaming(text: str, split: SplitLines) -> list[Finding]:
+    """Evaluate FH/BH rules from header records in the physical line stream."""
+    layouts = default_layouts()
+    ach_file = AchFile(line_count=len(split.records))
+    current_batch: Batch | None = None
+
+    for line in split.records:
+        code = line.content[:1]
+        if code == "1" and ach_file.header is None:
+            ach_file.header = _layout_record(line, layouts, "file_header", "1")
+        elif code == "5" and (
+            current_batch is None or current_batch.control is not None
+        ):
+            current_batch = Batch(
+                header=_layout_record(line, layouts, "batch_header", "5")
+            )
+            ach_file.batches.append(current_batch)
+        elif code == "8" and current_batch is not None:
+            current_batch.control = _layout_record(line, layouts, "batch_control", "8")
+
+    context = ValidationContext(text=text, split=split, ach_file=ach_file)
+    return validate_headers(context)
