@@ -1,6 +1,6 @@
 """Parity coverage for the internal first streaming-validation slice."""
 
-from achlens.core import build_record, validate
+from achlens.core import build_record, generate_ach_file, validate
 from achlens.core.layouts import default_layouts
 from achlens.core.rules.structural import Finding, ValidationContext
 from tests.fixtures.builders import (
@@ -185,3 +185,24 @@ def test_streaming_matches_addenda_ordering_and_sensitive_values(monkeypatch):
     assert _validate(malformed, monkeypatch, True) == _validate(
         malformed, monkeypatch, False
     )
+
+
+def test_streaming_report_parity_across_summary_fixture_shapes(monkeypatch):
+    valid = valid_file()
+    malformed = set_field(valid, 3, "entry_detail_ppd", "amount", 999)
+    multiple_batch = generate_ach_file(
+        batches=2,
+        entries_per_batch=2,
+        service_class=200,
+        seed=20260912,
+        effective_date="260912",
+    )
+    addenda = _with_addenda("PPD")
+    mixed_endings = (
+        "\r\n".join(valid.splitlines()[:3]) + "\n" + "\r\n".join(valid.splitlines()[3:])
+    )
+
+    for content in (valid, malformed, multiple_batch, addenda, mixed_endings):
+        assert _validate(content, monkeypatch, True) == _validate(
+            content, monkeypatch, False
+        )

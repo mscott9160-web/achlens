@@ -37,6 +37,9 @@ class StreamFacts:
     exact_line_count: int
     first_record_type: str
     last_record_type: str
+    batch_count: int
+    entry_count: int
+    addenda_count: int
 
 
 def _stream_entry_finding(
@@ -622,6 +625,12 @@ def scan(text: str) -> tuple[SplitLines, StreamFacts]:
     exact_line_count = 0
     first_record_type = ""
     last_record_type = ""
+    batch_count = 0
+    entry_count = 0
+    addenda_count = 0
+    batch_open = False
+    batch_closed = False
+    entry_open = False
     for line in split.records:
         record_type = line.content[:1]
         if not first_record_type:
@@ -629,12 +638,28 @@ def scan(text: str) -> tuple[SplitLines, StreamFacts]:
         last_record_type = record_type
         if line.length.value == "exact":
             exact_line_count += 1
+        if record_type == "5" and (not batch_open or batch_closed):
+            batch_count += 1
+            batch_open = True
+            batch_closed = False
+            entry_open = False
+        elif record_type == "6" and batch_open and not batch_closed:
+            entry_count += 1
+            entry_open = True
+        elif record_type == "7" and batch_open and not batch_closed and entry_open:
+            addenda_count += 1
+        elif record_type == "8" and batch_open and not batch_closed:
+            batch_closed = True
+            entry_open = False
     facts = StreamFacts(
         line_count=len(split.records),
         line_ending=split.line_ending.value,
         exact_line_count=exact_line_count,
         first_record_type=first_record_type,
         last_record_type=last_record_type,
+        batch_count=batch_count,
+        entry_count=entry_count,
+        addenda_count=addenda_count,
     )
     return split, facts
 

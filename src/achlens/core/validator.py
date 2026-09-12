@@ -2,7 +2,7 @@
 
 import os
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from .parser import parse
 from .rules.addenda import validate_addenda
@@ -11,6 +11,7 @@ from .rules.entry import validate_entries
 from .rules.headers import validate_headers
 from .rules.structural import Finding, ValidationContext, validate_structure
 from .streaming import (
+    StreamFacts,
     scan,
     validate_addenda_streaming,
     validate_controls_streaming,
@@ -58,14 +59,14 @@ def _streaming_enabled() -> bool:
     return os.environ.get("ACHLENS_INTERNAL_STREAMING_VALIDATION") == "1"
 
 
-def _streaming_context(content: str) -> ValidationContext:
-    """Build the legacy context after the bounded streaming scan."""
-    split, _facts = scan(content)
+def _streaming_context(content: str) -> tuple[ValidationContext, StreamFacts]:
+    """Build the rule context after the bounded streaming scan."""
+    split, facts = scan(content)
     return ValidationContext(
         text=content,
         split=split,
-        ach_file=parse(content, split=split),
-    )
+        ach_file=None,
+    ), facts
 
 
 def _summary(context: ValidationContext) -> FileSummary:
@@ -77,6 +78,15 @@ def _summary(context: ValidationContext) -> FileSummary:
         addenda_count=sum(
             len(entry.addenda) for batch in batches for entry in batch.entries
         ),
+    )
+
+
+def _streaming_summary(facts: StreamFacts) -> FileSummary:
+    return FileSummary(
+        line_count=facts.line_count,
+        batch_count=facts.batch_count,
+        entry_count=facts.entry_count,
+        addenda_count=facts.addenda_count,
     )
 
 
@@ -104,13 +114,25 @@ def validate(
         and runners is DEFAULT_RULE_RUNNERS
     )
     if use_streaming:
-        context = _streaming_context(content)
+        context, stream_facts = _streaming_context(content)
     else:
         context = (
             ValidationContext.from_text(content)
             if isinstance(content, str)
             else content
         )
+    streaming_controls = use_streaming and (
+        sum(line.content[:1] == "8" for line in context.split.records)
+        == sum(line.content[:1] == "5" for line in context.split.records)
+        and all(
+            line.length.value == "exact"
+            for line in context.split.records
+            if line.content[:1] == "8"
+            or (line.content[:1] == "9" and line.content != "9" * 94)
+        )
+    )
+    if use_streaming and not streaming_controls:
+        context = replace(context, ach_file=parse(content, split=context.split))
     all_findings = [
         finding
         for index, runner in enumerate(runners)
@@ -124,16 +146,7 @@ def validate(
             else validate_addenda_streaming(context.split)
             if use_streaming and index == 3
             else validate_controls_streaming(context.split)
-            if use_streaming
-            and index == 4
-            and sum(line.content[:1] == "8" for line in context.split.records)
-            == sum(line.content[:1] == "5" for line in context.split.records)
-            and all(
-                line.length.value == "exact"
-                for line in context.split.records
-                if line.content[:1] == "8"
-                or (line.content[:1] == "9" and line.content != "9" * 94)
-            )
+            if use_streaming and index == 4 and streaming_controls
             else runner(context)
         )
     ]
@@ -162,7 +175,9 @@ def validate(
         counts_by_rule=counts_by_rule,
         findings=findings,
         truncated=len(visible) > max_findings,
-        summary=_summary(context),
+        summary=_streaming_summary(stream_facts)
+        if use_streaming
+        else _summary(context),
     )
 
 
