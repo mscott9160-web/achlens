@@ -18,6 +18,7 @@ from achlens.core.data.entry_codes import PRENOTE_CODES
 from achlens.core.masking import mask as mask_ach
 from achlens.core.model import AchFile, Record
 from achlens.core.parser import parse
+from achlens.core.reference import lookup_code
 from achlens.core.validator import validate as validate_core
 
 from .config import ServerConfig
@@ -437,9 +438,22 @@ def check_routing_number(routing_number: str) -> dict[str, object]:
     }
 
 
+def lookup_ach_code(kind: str, code: str) -> dict[str, object]:
+    """Look up a return, NOC, transaction, SEC, or service-class code."""
+    try:
+        return lookup_code(kind, code)
+    except ValueError:
+        return _error(
+            "UNSUPPORTED",
+            "Reference kind is not supported.",
+            "Use return, noc, transaction, sec, or service_class.",
+        )
+
+
 __all__ = [
     "check_routing_number",
     "explain_control_totals",
+    "lookup_ach_code",
     "parse_ach_file",
     "summarize_ach_file",
     "validate_ach_file",

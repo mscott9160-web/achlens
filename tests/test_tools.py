@@ -5,6 +5,7 @@ from achlens.core.layouts import default_layouts
 from achlens.server.tools import (
     check_routing_number,
     explain_control_totals,
+    lookup_ach_code,
     parse_ach_file,
     summarize_ach_file,
     validate_ach_file,
@@ -95,4 +96,22 @@ def test_check_routing_prefix_and_bad_input() -> None:
     assert prefix["valid"] is True
     assert prefix["expected_check_digit"] == "0"
     error = check_routing_number("not-a-routing-number")
+    assert error["error"]["code"] == "UNSUPPORTED"
+
+
+def test_lookup_ach_code_returns_unverified_reference_rows() -> None:
+    result = lookup_ach_code("return", "R03")
+    assert result["code"] == "R03"
+    assert result["status"] == "UNVERIFIED"
+    assert result["title"] == "No Account / Unable to Locate Account"
+
+    transaction = lookup_ach_code("transaction", "22")
+    assert transaction["title"] == "Checking credit"
+
+
+def test_lookup_ach_code_returns_close_matches_and_structured_errors() -> None:
+    unknown = lookup_ach_code("noc", "C0")
+    assert unknown["found"] is False
+    assert unknown["close_matches"]
+    error = lookup_ach_code("unsupported", "R03")
     assert error["error"]["code"] == "UNSUPPORTED"

@@ -6,6 +6,7 @@ from .config import ServerConfig
 from .tools import (
     check_routing_number,
     explain_control_totals,
+    lookup_ach_code,
     parse_ach_file,
     summarize_ach_file,
     validate_ach_file,
@@ -26,6 +27,7 @@ mcp.tool()(summarize_ach_file)
 mcp.tool()(parse_ach_file)
 mcp.tool()(explain_control_totals)
 mcp.tool()(check_routing_number)
+mcp.tool()(lookup_ach_code)
 
 
 def run() -> None:
@@ -36,6 +38,7 @@ def run() -> None:
 __all__ = [
     "mcp",
     "explain_control_totals",
+    "lookup_ach_code",
     "check_routing_number",
     "parse_ach_file",
     "run",
