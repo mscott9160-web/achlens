@@ -9,6 +9,27 @@ The release baseline is `v0.1.2` at commit `41edef4`. The optimized streaming
 validator is enabled by default for built-in runners. The internal rollback
 switch is `ACHLENS_DISABLE_STREAMING_VALIDATION=1`.
 
+## Current Status
+
+Completed on `development/test-com`:
+
+- **QA-02:** Windows 3.11/3.12/3.13 was added to regular CI and hosted CI
+  passed.
+- **SEC-03:** Structured sensitive-output masking and regression coverage were
+  completed, including the NOC trace leak fix.
+- **QA-01:** Optional 100-case differential validation and disagreement
+  artifacts were added.
+- **OPS-01:** `master` now requires pull requests, CODEOWNERS review, all nine
+  quality checks, conversation resolution, and administrator enforcement. The
+  `pypi` environment requires repository-owner approval and protected branches.
+
+Still requiring repository-owner or product-owner action:
+
+- **OPS-02:** Enable and test GitHub Security Advisories.
+- **SEC-01:** Establish and enforce signed release-tag policy.
+- **SUP-02:** Confirm primary and backup owners for every operational role.
+- **SUP-03:** Approve support response and maintenance lifecycle commitments.
+
 ## Definition Of Done
 
 Every story must have:
