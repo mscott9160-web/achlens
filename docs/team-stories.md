@@ -27,9 +27,10 @@ Completed on `development/test-com`:
 
 Still requiring repository-owner or product-owner action:
 
-- **SEC-01:** Signed-tag policy is documented in
-  `docs/release-signing.md`; key ownership, enforcement, and rehearsal remain
-  open.
+- **SEC-01:** Release tags matching `v*` are protected by an active GitHub
+  ruleset against deletion and non-fast-forward updates. Signed-key ownership,
+  cryptographic verification, and rehearsal remain open; see
+  `docs/release-signing.md`.
 - **SUP-02:** Confirm primary and backup owners for every operational role.
 - **SUP-03:** Support and maintenance lifecycle policy drafted in
   `docs/maintenance-lifecycle.md`; support-owner and product-owner approval is
