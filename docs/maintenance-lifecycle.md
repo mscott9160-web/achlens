@@ -1,5 +1,10 @@
 # Support And Maintenance Lifecycle
 
+For `v0.1.x`, the project uses the conservative best-effort support policy:
+there is no response-time SLA or guaranteed fix date. Formal support windows
+will be reconsidered after a second active maintainer and meaningful support
+volume exist.
+
 This policy describes the support boundary for `achlens`. It is maintained
 through the repository and does not create a guaranteed service level, paid
 support channel, or promise of a response or fix by a particular date.

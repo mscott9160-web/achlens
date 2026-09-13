@@ -63,6 +63,10 @@ priority and the team accepts the larger implementation scope. Do not enable
 cryptographic enforcement until the chosen verifier has passed both signed and
 unsigned rehearsal cases.
 
+**Selected decision:** Option A, SSH-signed tags, is selected for the next
+release. The signing authority, recovery signer, public-key registration, and
+signed/unsigned rehearsal are still required before enforcement is activated.
+
 ## Backup Ownership
 
 ### Option A: One named trusted collaborator
@@ -90,6 +94,10 @@ when a second maintainer is active.
 **Recommendation:** Choose Option C immediately. Do not invent or assign a
 backup without that person’s explicit consent.
 
+**Selected decision:** Option C, staged ownership, is selected. The current
+repository owner remains the primary owner; no backup maintainer is assigned
+until a real person explicitly consents.
+
 ## Support Lifecycle Approval
 
 ### Option A: Conservative maintenance promise
@@ -112,6 +120,10 @@ severity.
 
 **Recommendation:** Approve Option A for v0.1.x. Revisit Option B after a
 second active maintainer and observed support volume exist.
+
+**Selected decision:** Option A, conservative best-effort support, is approved
+for `v0.1.x`. No response-time SLA is promised. Revisit formal support windows
+after a second active maintainer and meaningful support volume exist.
 
 ## Decision Record Template
 

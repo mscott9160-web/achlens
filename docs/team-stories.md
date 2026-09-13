@@ -30,14 +30,16 @@ Still requiring repository-owner or product-owner action:
 Decision options and recommendations are recorded in
 `docs/governance-decision-options.md`.
 
-- **SEC-01:** Release tags matching `v*` are protected by an active GitHub
-  ruleset against deletion and non-fast-forward updates. Signed-key ownership,
+- **SEC-01:** SSH-signed tags are selected for the next release. Release tags
+  matching `v*` are protected by an active GitHub ruleset against deletion and
+  non-fast-forward updates. Signing-key ownership, recovery signer,
   cryptographic verification, and rehearsal remain open; see
   `docs/release-signing.md`.
-- **SUP-02:** Confirm primary and backup owners for every operational role.
-- **SUP-03:** Support and maintenance lifecycle policy drafted in
-  `docs/maintenance-lifecycle.md`; support-owner and product-owner approval is
-  still required before commitments are treated as approved.
+- **SUP-02:** Staged ownership is selected. The repository owner remains the
+  primary owner; no backup maintainer is assigned without explicit consent.
+- **SUP-03:** Conservative best-effort support is approved for `v0.1.x`.
+  `docs/maintenance-lifecycle.md` is the governing policy; no formal SLA is
+  promised.
 
 ## Definition Of Done
 

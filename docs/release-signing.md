@@ -2,9 +2,9 @@
 
 ## Status
 
-Signed-tag enforcement is **not active yet**. No release should claim signed-tag
-verification until the repository owner completes the configuration and the
-rehearsal evidence below.
+SSH-signed tags are selected for the next release, but enforcement is **not
+active yet**. No release should claim signed-tag verification until the
+repository owner completes key setup and the rehearsal evidence below.
 
 ## Authority
 
