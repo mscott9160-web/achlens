@@ -48,7 +48,9 @@ switch is `ACHLENS_DISABLE_STREAMING_VALIDATION=1`.
 Decision options and recommendations are recorded in
 `docs/governance-decision-options.md`.
 
-- **SUP-01:** Incident-response rehearsal has not been completed.
+- **SUP-01:** Incident-response rehearsal completed with the synthetic record
+  in `docs/incident-rehearsal-2026-09-13.md`. Repeat after a second maintainer
+  accepts incident backup ownership.
 - **QA-04:** Unverified reference-data review and product-owner approval have
   not been completed.
 - **PROD-01:** Custom-runner compatibility decision remains open.
