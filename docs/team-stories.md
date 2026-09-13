@@ -27,6 +27,9 @@ Completed on `development/test-com`:
 
 Still requiring repository-owner or product-owner action:
 
+Decision options and recommendations are recorded in
+`docs/governance-decision-options.md`.
+
 - **SEC-01:** Release tags matching `v*` are protected by an active GitHub
   ruleset against deletion and non-fast-forward updates. Signed-key ownership,
   cryptographic verification, and rehearsal remain open; see

@@ -40,7 +40,9 @@ Dependency review is part of release approval. Follow
 Signed release policy is documented in
 [Release Signing Policy](release-signing.md). Signed-tag enforcement is not
 active until the owner completes the key, protection, and rehearsal steps in
-that policy.
+that policy. Tradeoffs for SSH, GPG, Sigstore, backup ownership, and support
+commitments are summarized in
+[Governance Decision Options](governance-decision-options.md).
 
 Performance verification for the documented 100,000-entry target passed. The
 streaming suite recorded 193 passed and 1 skipped; hosted Windows, Ubuntu, and
