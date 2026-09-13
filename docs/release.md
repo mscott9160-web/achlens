@@ -50,3 +50,8 @@ macOS runs each completed in under one second, used 53.8 MB, produced valid
 reports with no errors, and matched the legacy path exactly. Optimized
 streaming is enabled by default for built-in runners, while
 `ACHLENS_DISABLE_STREAMING_VALIDATION=1` remains an internal rollback switch.
+
+Reference-data review is tracked in
+[Reference Data Review](reference-data-review.md). Unverified rows require a
+product-owner decision before any authoritative banking or compliance claim is
+released.

@@ -51,8 +51,9 @@ Decision options and recommendations are recorded in
 - **SUP-01:** Incident-response rehearsal completed with the synthetic record
   in `docs/incident-rehearsal-2026-09-13.md`. Repeat after a second maintainer
   accepts incident backup ownership.
-- **QA-04:** Unverified reference-data review and product-owner approval have
-  not been completed.
+- **QA-04:** The review register is published in
+  `docs/reference-data-review.md`. Product-owner decisions for each
+  `UNVERIFIED` row remain open; no authoritative interpretation is claimed.
 - **PROD-01:** Custom-runner compatibility decision remains open.
 - **PROD-02:** Further optimization is deferred until measured regression or a
   new profile justifies it.
