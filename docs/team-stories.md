@@ -22,10 +22,11 @@ Completed on `development/test-com`:
 - **OPS-01:** `master` now requires pull requests, CODEOWNERS review, all nine
   quality checks, conversation resolution, and administrator enforcement. The
   `pypi` environment requires repository-owner approval and protected branches.
+- **OPS-02:** GitHub Security Advisories and private vulnerability reporting are
+  enabled; Dependabot alerts and security updates are enabled.
 
 Still requiring repository-owner or product-owner action:
 
-- **OPS-02:** Enable and test GitHub Security Advisories.
 - **SEC-01:** Signed-tag policy is documented in
   `docs/release-signing.md`; key ownership, enforcement, and rehearsal remain
   open.
