@@ -26,9 +26,13 @@ Completed on `development/test-com`:
 Still requiring repository-owner or product-owner action:
 
 - **OPS-02:** Enable and test GitHub Security Advisories.
-- **SEC-01:** Establish and enforce signed release-tag policy.
+- **SEC-01:** Signed-tag policy is documented in
+  `docs/release-signing.md`; key ownership, enforcement, and rehearsal remain
+  open.
 - **SUP-02:** Confirm primary and backup owners for every operational role.
-- **SUP-03:** Approve support response and maintenance lifecycle commitments.
+- **SUP-03:** Support and maintenance lifecycle policy drafted in
+  `docs/maintenance-lifecycle.md`; support-owner and product-owner approval is
+  still required before commitments are treated as approved.
 
 ## Definition Of Done
 
@@ -105,6 +109,8 @@ scheduled benchmark runs for one release cycle.
 **Priority:** P0  
 **Owner:** Release owner / Security owner  
 **Depends on:** OPS-01
+
+Policy: [Release Signing Policy](release-signing.md)
 
 Define the signing authority and verify signed tags in release automation before
 building or publishing artifacts.
@@ -213,6 +219,10 @@ deprecation rules, security-fix policy, and issue-triage cadence.
 - Public support and private security reporting are clearly separated.
 - Deprecation notices include a replacement and timeline.
 - Stale issue handling has an explicit cadence and owner.
+
+**Delivery status:** Documentation is published for review. The Support owner
+and Product owner remain the approval owners; no individual contact or approval
+date is asserted here.
 
 ## Epic D: Quality And Compatibility
 

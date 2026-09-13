@@ -22,6 +22,10 @@ information, label or close duplicates, and route security or release-risk
 issues to the appropriate owner. Response times vary with severity,
 reproducibility, maintainer availability, and project priorities.
 
+See [Support And Maintenance Lifecycle](maintenance-lifecycle.md) for the
+supported Python and package boundaries, security-fix policy, deprecation
+process, triage cadence, and end-of-support criteria.
+
 This project is not a bank gateway, compliance advisor, or transmission
 system. Validation output and documentation do not replace Nacha rules,
 financial-institution requirements, or qualified professional advice.

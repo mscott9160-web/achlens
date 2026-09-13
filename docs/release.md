@@ -37,6 +37,11 @@ Dependency review is part of release approval. Follow
 [Dependency Governance](dependency-governance.md) for lockfile checks,
 `pip-audit` exceptions, ownership, and expiry requirements.
 
+Signed release policy is documented in
+[Release Signing Policy](release-signing.md). Signed-tag enforcement is not
+active until the owner completes the key, protection, and rehearsal steps in
+that policy.
+
 Performance verification for the documented 100,000-entry target passed. The
 streaming suite recorded 193 passed and 1 skipped; hosted Windows, Ubuntu, and
 macOS runs each completed in under one second, used 53.8 MB, produced valid
