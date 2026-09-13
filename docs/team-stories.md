@@ -11,7 +11,7 @@ switch is `ACHLENS_DISABLE_STREAMING_VALIDATION=1`.
 
 ## Current Status
 
-Completed on `development/test-com`:
+### Done
 
 - **QA-02:** Windows 3.11/3.12/3.13 was added to regular CI and hosted CI
   passed.
@@ -25,18 +25,38 @@ Completed on `development/test-com`:
 - **OPS-02:** GitHub Security Advisories and private vulnerability reporting are
   enabled; Dependabot alerts and security updates are enabled.
 
-Still requiring repository-owner or product-owner action:
+### Partial
+
+- **OPS-03:** The v0.1.2 rollback path, scheduled benchmark, support channel,
+  and issue intake exist. The required release-cycle triage log is not yet
+  complete.
+- **SEC-01:** `v*` tags are protected and SSH signing is selected. Key creation,
+  recovery signer, cryptographic verification, and signed/unsigned rehearsal
+  remain open.
+- **SEC-02:** The full-suite Python socket-denial fixture is active. DNS,
+  subprocess-network, and CI failure-artifact coverage remain to be proven.
+- **SEC-04:** Version consistency checks and manual Registry publication are
+  documented and tested. Automated Registry publication and release artifacts
+  remain open.
+- **SUP-02:** Staged ownership is selected and the repository owner is primary.
+  No backup owner has consented yet.
+- **QA-03:** Cross-platform benchmark automation and evidence are complete.
+  Ongoing release-cycle review remains.
+
+### Open
 
 Decision options and recommendations are recorded in
 `docs/governance-decision-options.md`.
 
-- **SEC-01:** SSH-signed tags are selected for the next release. Release tags
-  matching `v*` are protected by an active GitHub ruleset against deletion and
-  non-fast-forward updates. Signing-key ownership, recovery signer,
-  cryptographic verification, and rehearsal remain open; see
-  `docs/release-signing.md`.
-- **SUP-02:** Staged ownership is selected. The repository owner remains the
-  primary owner; no backup maintainer is assigned without explicit consent.
+- **SUP-01:** Incident-response rehearsal has not been completed.
+- **QA-04:** Unverified reference-data review and product-owner approval have
+  not been completed.
+- **PROD-01:** Custom-runner compatibility decision remains open.
+- **PROD-02:** Further optimization is deferred until measured regression or a
+  new profile justifies it.
+
+### Approved Policy
+
 - **SUP-03:** Conservative best-effort support is approved for `v0.1.x`.
   `docs/maintenance-lifecycle.md` is the governing policy; no formal SLA is
   promised.
@@ -227,9 +247,9 @@ deprecation rules, security-fix policy, and issue-triage cadence.
 - Deprecation notices include a replacement and timeline.
 - Stale issue handling has an explicit cadence and owner.
 
-**Delivery status:** Documentation is published for review. The Support owner
-and Product owner remain the approval owners; no individual contact or approval
-date is asserted here.
+**Delivery status:** Documentation is published and the conservative
+best-effort `v0.1.x` policy is approved. No formal SLA or individual backup
+owner is asserted.
 
 ## Epic D: Quality And Compatibility
 
