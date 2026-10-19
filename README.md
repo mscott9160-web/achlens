@@ -49,10 +49,26 @@ This project uses [uv](https://docs.astral.sh/uv/).
 ```text
 uv sync
 uv run achlens --help
-uv run pytest -q
+PYTHONPATH=. uv run pytest -q
 uv run ruff check .
 uv run ruff format --check .
 uv run mypy --strict src
 ```
+
+## Without uv
+
+The CLI and test suite also work with plain pip:
+
+```text
+pip install -e . pytest
+achlens --help
+achlens validate tests/fixtures/golden/sample_valid.ach
+achlens generate --sec PPD --entries 5 --seed 7
+PYTHONPATH=. pytest
+```
+
+Set `PYTHONPATH=.` from the repository root when running tests so fixture and
+script imports resolve. In Windows PowerShell, use
+`$env:PYTHONPATH = "."; pytest`.
 
 Never add real payment data, account numbers, or ACH files to this repository.
