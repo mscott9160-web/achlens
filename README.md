@@ -2,7 +2,7 @@
 
 <!-- mcp-name: io.github.mscott9160-web/achlens -->
 
-achlens is a local-first Python MCP server and CLI for inspecting synthetic ACH
+Achlens is a local-first Python MCP server and CLI for inspecting synthetic ACH
 files. It parses fixed-width records, validates structure and control totals,
 explains findings, masks sensitive fields, repairs derived controls, and
 generates deterministic test files. It never transmits ACH files or makes
