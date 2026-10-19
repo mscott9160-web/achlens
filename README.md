@@ -1,4 +1,4 @@
-# achlens
+# Achlens
 
 <!-- mcp-name: io.github.mscott9160-web/achlens -->
 
