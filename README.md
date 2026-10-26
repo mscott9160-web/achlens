@@ -1,9 +1,9 @@
 # Achlens
 
-[![PyPI version](https://img.shields.io/pypi/v/achlens.svg)](https://pypi.org/project/achlens/)
-[![Python versions](https://img.shields.io/pypi/pyversions/achlens.svg)](https://pypi.org/project/achlens/)
-[![License](https://img.shields.io/pypi/l/achlens.svg)](LICENSE)
-[![CI status](https://github.com/mscott9160-web/achlens/actions/workflows/ci.yml/badge.svg)](https://github.com/mscott9160-web/achlens/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/achlens)](https://pypi.org/project/achlens/)
+[![Python](https://img.shields.io/pypi/pyversions/achlens)](https://pypi.org/project/achlens/)
+[![License](https://img.shields.io/pypi/l/achlens)](https://github.com/mscott9160-web/achlens/blob/master/LICENSE)
+[![CI](https://github.com/mscott9160-web/achlens/actions/workflows/ci.yml/badge.svg)](https://github.com/mscott9160-web/achlens/actions/workflows/ci.yml)
 
 <!-- mcp-name: io.github.mscott9160-web/achlens -->
 
