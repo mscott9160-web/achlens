@@ -4,6 +4,11 @@
 
 - Added the Sprint 0 repository foundation and CLI entry point.
 
+## 0.1.6
+
+- Updated package metadata, PyPI classifiers, project links, and repository
+  discoverability settings. No functional changes.
+
 ## 0.1.5
 
 - Documented the MCP tool, resource, and prompt surface and added tested

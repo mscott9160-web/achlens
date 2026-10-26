@@ -1,5 +1,10 @@
 # Achlens
 
+[![PyPI version](https://img.shields.io/pypi/v/achlens.svg)](https://pypi.org/project/achlens/)
+[![Python versions](https://img.shields.io/pypi/pyversions/achlens.svg)](https://pypi.org/project/achlens/)
+[![License](https://img.shields.io/pypi/l/achlens.svg)](LICENSE)
+[![CI status](https://github.com/mscott9160-web/achlens/actions/workflows/ci.yml/badge.svg)](https://github.com/mscott9160-web/achlens/actions/workflows/ci.yml)
+
 <!-- mcp-name: io.github.mscott9160-web/achlens -->
 
 Achlens is a local-first Python MCP server and CLI for inspecting synthetic ACH

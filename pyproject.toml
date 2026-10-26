@@ -1,16 +1,35 @@
 [project]
 name = "achlens"
-version = "0.1.5"
-description = "A local-first ACH file validation foundation."
+version = "0.1.6"
+description = "Local-first MCP server and CLI that validates ACH files and explains which field failed"
 readme = "README.md"
 requires-python = ">=3.11,<3.14"
 license = { file = "LICENSE" }
 authors = [{ name = "achlens contributors" }]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Financial and Insurance Industry",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Office/Business :: Financial",
+    "Topic :: Software Development",
+]
 dependencies = [
     "mcp>=2.2,<3.0",
     "pyyaml>=6.0,<7.0",
     "typer>=0.12,<1.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/mscott9160-web/achlens"
+Repository = "https://github.com/mscott9160-web/achlens"
+Issues = "https://github.com/mscott9160-web/achlens/issues"
+Changelog = "https://github.com/mscott9160-web/achlens/blob/master/CHANGELOG.md"
 
 [project.scripts]
 achlens = "achlens.cli:main"
