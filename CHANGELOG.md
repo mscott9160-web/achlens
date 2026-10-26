@@ -4,7 +4,7 @@
 
 - Added the Sprint 0 repository foundation and CLI entry point.
 
-## 0.1.3
+## 0.1.4
 
 - Documented the MCP tool, resource, and prompt surface and added tested
   configuration examples for VS Code/Copilot and Claude Desktop.
