@@ -4,6 +4,10 @@
 
 - Added the Sprint 0 repository foundation and CLI entry point.
 
+## 0.1.7
+
+- Updated the published README badge row. No functional changes.
+
 ## 0.1.6
 
 - Updated package metadata, PyPI classifiers, project links, and repository
