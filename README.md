@@ -34,6 +34,46 @@ Run the MCP server over stdio:
 uv run achlens serve
 ```
 
+## MCP Client Setup
+
+Install the published package with `uvx`; it starts the server locally over
+stdio and does not transmit ACH files.
+
+### VS Code and Copilot
+
+Create `.vscode/mcp.json` in your workspace:
+
+```json
+{
+  "servers": {
+    "achlens": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["achlens"]
+    }
+  }
+}
+```
+
+### Claude Desktop
+
+Add the following entry to the `mcpServers` object in Claude Desktop's MCP
+configuration:
+
+```json
+{
+  "achlens": {
+    "command": "uvx",
+    "args": ["achlens"]
+  }
+}
+```
+
+By default, MCP tools accept ACH content directly but cannot read local paths.
+To allow read-only access to a specific directory, set
+`ACHLENS_ALLOWED_ROOTS` in the server environment to that directory. Use
+synthetic ACH data only.
+
 The MCP server exposes validation, summaries, parsed-record paging, control
 explanations, routing checks, code lookup, synthetic generation, and control
 repair. See [docs/tools.md](docs/tools.md) for the current tool surface.
