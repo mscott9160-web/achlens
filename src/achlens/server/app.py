@@ -2,6 +2,8 @@
 
 from mcp.server import MCPServer
 
+from achlens import __version__
+
 from .config import ServerConfig
 from .prompts import debug_ach_file, explain_returns
 from .resources import layouts_resource, reference_resource, rules_resource
@@ -18,7 +20,7 @@ from .tools import (
 )
 
 _config = ServerConfig.from_environment()
-mcp = MCPServer("achlens", version="0.1.2", log_level=_config.log_level)
+mcp = MCPServer("achlens", version=__version__, log_level=_config.log_level)
 
 
 @mcp.tool()

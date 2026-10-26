@@ -4,6 +4,18 @@
 
 - Added the Sprint 0 repository foundation and CLI entry point.
 
+## 0.1.6
+
+- Updated package metadata, PyPI classifiers, project links, and repository
+  discoverability settings. No functional changes.
+
+## 0.1.5
+
+- Documented the MCP tool, resource, and prompt surface and added tested
+  configuration examples for VS Code/Copilot and Claude Desktop.
+- Added an end-to-end stdio protocol smoke test of the built wheel.
+- Updated audited runtime and development transitive dependencies.
+
 ## 0.1.2
 
 - Enabled streaming validation by default for built-in runners, with
