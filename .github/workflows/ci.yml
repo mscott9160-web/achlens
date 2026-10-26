@@ -32,6 +32,8 @@ jobs:
         run: uv run mypy --strict src
       - name: Tests
         run: uv run pytest -q --cov=src/achlens --cov-fail-under=0
+      - name: Packaged MCP smoke test
+        run: uv run --with build python scripts/package_smoke_test.py
       - name: Docs regeneration (Sprint 0 placeholder)
         run: |
           python -c "print('Docs regeneration placeholder: no generator exists in Sprint 0')"
